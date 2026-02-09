@@ -34,7 +34,9 @@ import {
   Loader2,
   Plus,
   Trash2,
-  Download
+  Download,
+  Archive,
+  ArchiveRestore
 } from 'lucide-react';
 import { ImportVocabularyModal } from '@/components/ImportVocabularyModal';
 import { calculateSM2, isDueForReview, formatInterval, getQualityLabel, getQualityVariant } from '@/lib/sm2';
@@ -52,6 +54,7 @@ interface Flashcard {
   repetitions: number;
   next_review_at: string;
   created_at: string;
+  is_active: boolean;
 }
 
 function FlashcardsContent() {
@@ -70,7 +73,7 @@ function FlashcardsContent() {
     pronunciation: '',
   });
 
-  // Fetch flashcards
+  // Fetch active flashcards
   const { data: flashcards, isLoading } = useQuery({
     queryKey: ['flashcards', user?.id],
     queryFn: async () => {
@@ -79,7 +82,26 @@ function FlashcardsContent() {
         .from('flashcards')
         .select('*')
         .eq('user_id', user.id)
+        .eq('is_active', true)
         .order('next_review_at', { ascending: true });
+
+      if (error) throw error;
+      return data as Flashcard[];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch archived flashcards
+  const { data: archivedFlashcards, isLoading: isLoadingArchived } = useQuery({
+    queryKey: ['flashcards-archived', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('flashcards')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', false)
+        .order('updated_at', { ascending: false });
 
       if (error) throw error;
       return data as Flashcard[];
@@ -186,21 +208,41 @@ function FlashcardsContent() {
     },
   });
 
-  // Delete flashcard mutation
-  const deleteMutation = useMutation({
+  // Archive flashcard mutation (soft delete)
+  const archiveMutation = useMutation({
     mutationFn: async (cardId: string) => {
       const { error } = await supabase
         .from('flashcards')
-        .delete()
+        .update({ is_active: false })
         .eq('id', cardId);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Flashcard removido!');
+      toast.success('Flashcard arquivado! Pode reativá-lo mais tarde.');
       queryClient.invalidateQueries({ queryKey: ['flashcards'] });
+      queryClient.invalidateQueries({ queryKey: ['flashcards-archived'] });
     },
     onError: () => {
-      toast.error('Erro ao remover flashcard');
+      toast.error('Erro ao arquivar flashcard');
+    },
+  });
+
+  // Restore flashcard mutation
+  const restoreMutation = useMutation({
+    mutationFn: async (cardId: string) => {
+      const { error } = await supabase
+        .from('flashcards')
+        .update({ is_active: true })
+        .eq('id', cardId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Flashcard reativado!');
+      queryClient.invalidateQueries({ queryKey: ['flashcards'] });
+      queryClient.invalidateQueries({ queryKey: ['flashcards-archived'] });
+    },
+    onError: () => {
+      toast.error('Erro ao reativar flashcard');
     },
   });
 
@@ -373,6 +415,9 @@ function FlashcardsContent() {
         <TabsList>
           <TabsTrigger value="review">Revisar</TabsTrigger>
           <TabsTrigger value="all">Todos os Cards</TabsTrigger>
+          <TabsTrigger value="archived">
+            Arquivados ({archivedFlashcards?.length || 0})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="review" className="space-y-6">
@@ -522,9 +567,72 @@ function FlashcardsContent() {
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
                       <CardTitle className="text-lg">{card.word}</CardTitle>
-                      <Badge variant={isDueForReview(card.next_review_at) ? 'destructive' : 'secondary'}>
-                        {isDueForReview(card.next_review_at) ? 'Pendente' : formatInterval(card.interval)}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={isDueForReview(card.next_review_at) ? 'destructive' : 'secondary'}>
+                          {isDueForReview(card.next_review_at) ? 'Pendente' : formatInterval(card.interval)}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => archiveMutation.mutate(card.id)}
+                          disabled={archiveMutation.isPending}
+                          title="Arquivar flashcard"
+                        >
+                          <Archive className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    {card.pronunciation && (
+                      <CardDescription>{card.pronunciation}</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <p className="font-medium">{card.translation}</p>
+                    {card.definition && (
+                      <p className="text-sm text-muted-foreground mt-1">{card.definition}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="archived">
+          {isLoadingArchived ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
+          ) : !archivedFlashcards || archivedFlashcards.length === 0 ? (
+            <Card className="py-12">
+              <CardContent className="text-center">
+                <Archive className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">Nenhum flashcard arquivado</h3>
+                <p className="text-muted-foreground">
+                  Flashcards arquivados aparecerão aqui.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {archivedFlashcards.map((card) => (
+                <Card key={card.id} className="opacity-75">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between">
+                      <CardTitle className="text-lg">{card.word}</CardTitle>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => restoreMutation.mutate(card.id)}
+                        disabled={restoreMutation.isPending}
+                        className="gap-1"
+                      >
+                        <ArchiveRestore className="h-4 w-4" />
+                        Reativar
+                      </Button>
                     </div>
                     {card.pronunciation && (
                       <CardDescription>{card.pronunciation}</CardDescription>
