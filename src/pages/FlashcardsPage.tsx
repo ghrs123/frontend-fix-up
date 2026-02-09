@@ -33,8 +33,10 @@ import {
   ChevronRight,
   Loader2,
   Plus,
-  Trash2
+  Trash2,
+  Download
 } from 'lucide-react';
+import { ImportVocabularyModal } from '@/components/ImportVocabularyModal';
 import { calculateSM2, isDueForReview, formatInterval, getQualityLabel, getQualityVariant } from '@/lib/sm2';
 import { cn } from '@/lib/utils';
 
@@ -59,6 +61,7 @@ function FlashcardsContent() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [reviewMode, setReviewMode] = useState<'due' | 'all'>('due');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [newCard, setNewCard] = useState({
     word: '',
     translation: '',
@@ -283,13 +286,18 @@ function FlashcardsContent() {
             Revise o seu vocabulário com repetição espaçada
           </p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
+            <Download className="h-4 w-4 mr-2" />
+            Importar
+          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <form onSubmit={handleAddCard}>
               <DialogHeader>
@@ -356,7 +364,10 @@ function FlashcardsContent() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      <ImportVocabularyModal open={isImportModalOpen} onOpenChange={setIsImportModalOpen} />
 
       <Tabs defaultValue="review" className="space-y-6">
         <TabsList>
