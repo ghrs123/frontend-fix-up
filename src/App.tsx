@@ -10,6 +10,8 @@ import ReadingPage from "./pages/ReadingPage";
 import ReadPage from "./pages/ReadPage";
 import FlashcardsPage from "./pages/FlashcardsPage";
 import GrammarPage from "./pages/GrammarPage";
+import QuizPage from "./pages/QuizPage";
+import PracticePage from "./pages/PracticePage";
 import ProgressDashboard from "./pages/ProgressDashboard";
 import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
@@ -37,6 +39,8 @@ const App = () => (
             <Route path="/read/:id" element={<ReadPage />} />
             <Route path="/flashcards" element={<FlashcardsPage />} />
             <Route path="/grammar" element={<GrammarPage />} />
+            <Route path="/quiz" element={<QuizPage />} />
+            <Route path="/practice" element={<PracticePage />} />
             <Route path="/progress" element={<ProgressDashboard />} />
             <Route path="/admin" element={<AdminPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
