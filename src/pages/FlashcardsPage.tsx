@@ -22,6 +22,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { 
   Layers, 
@@ -65,6 +75,7 @@ function FlashcardsContent() {
   const [reviewMode, setReviewMode] = useState<'due' | 'all'>('due');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [cardToArchive, setCardToArchive] = useState<Flashcard | null>(null);
   const [newCard, setNewCard] = useState({
     word: '',
     translation: '',
@@ -575,7 +586,7 @@ function FlashcardsContent() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => archiveMutation.mutate(card.id)}
+                          onClick={() => setCardToArchive(card)}
                           disabled={archiveMutation.isPending}
                           title="Arquivar flashcard"
                         >
@@ -650,6 +661,32 @@ function FlashcardsContent() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Archive Confirmation Dialog */}
+      <AlertDialog open={!!cardToArchive} onOpenChange={(open) => !open && setCardToArchive(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Arquivar flashcard?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem a certeza que deseja arquivar o flashcard "{cardToArchive?.word}"? 
+              Pode reativá-lo mais tarde na aba "Arquivados".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (cardToArchive) {
+                  archiveMutation.mutate(cardToArchive.id);
+                  setCardToArchive(null);
+                }
+              }}
+            >
+              Arquivar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
