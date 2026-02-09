@@ -62,7 +62,12 @@ export default function HomePage() {
     },
   });
 
-  const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Estudante';
+  // Priority: profile display_name > user metadata > email username > default
+  const displayName = profile?.display_name || 
+    user?.user_metadata?.display_name || 
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    (user?.email ? user.email.split('@')[0] : 'Estudante');
 
   const features = [
     {
