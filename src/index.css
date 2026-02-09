@@ -2,19 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-/* English Study App Design System - Light & Fresh Theme */
+/* English Study App Design System - Educational Blue Theme */
 
 @layer base {
   :root {
-    /* Primary - Teal/Green for learning focus */
-    --primary: 160 84% 39%;
+    /* Primary - Educational Blue for learning focus */
+    --primary: 217 91% 50%;
     --primary-foreground: 0 0% 100%;
     
     /* Background - Clean white */
     --background: 0 0% 100%;
     --foreground: 222 47% 11%;
 
-    /* Card - Subtle gray */
+    /* Card - Pure white */
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
@@ -22,23 +22,23 @@
     --popover-foreground: 222 47% 11%;
 
     /* Secondary - Soft blue-gray */
-    --secondary: 210 40% 96%;
+    --secondary: 214 32% 96%;
     --secondary-foreground: 222 47% 11%;
 
-    /* Muted - Light gray */
-    --muted: 210 40% 96%;
+    /* Muted - Light gray-blue */
+    --muted: 214 32% 96%;
     --muted-foreground: 215 16% 47%;
 
-    /* Accent - Warm orange for highlights */
-    --accent: 25 95% 53%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - Warm amber for highlights and CTAs */
+    --accent: 38 92% 50%;
+    --accent-foreground: 222 47% 11%;
 
     /* Success - Green for correct answers */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
     /* Warning - Orange for hints */
-    --warning: 38 92% 50%;
+    --warning: 25 95% 53%;
     --warning-foreground: 0 0% 100%;
 
     /* Destructive - Red for errors */
@@ -47,13 +47,13 @@
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 160 84% 39%;
+    --ring: 217 91% 50%;
 
     --radius: 0.75rem;
 
     /* Custom tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(160 84% 39%), hsl(170 76% 42%));
-    --gradient-accent: linear-gradient(135deg, hsl(25 95% 53%), hsl(38 92% 50%));
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 50%), hsl(230 85% 55%));
+    --gradient-accent: linear-gradient(135deg, hsl(38 92% 50%), hsl(25 95% 53%));
     --gradient-success: linear-gradient(135deg, hsl(142 71% 45%), hsl(152 65% 40%));
     --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     --shadow-hover: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -61,25 +61,25 @@
     /* Sidebar - Clean white with subtle border */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 160 84% 39%;
+    --sidebar-primary: 217 91% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent: 214 32% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 160 84% 39%;
+    --sidebar-ring: 217 91% 50%;
   }
 
   .dark {
-    --primary: 160 84% 50%;
+    --primary: 217 91% 60%;
     --primary-foreground: 222 47% 11%;
 
-    --background: 224 71% 4%;
+    --background: 222 47% 8%;
     --foreground: 213 31% 91%;
 
-    --card: 224 71% 6%;
+    --card: 222 47% 10%;
     --card-foreground: 213 31% 91%;
 
-    --popover: 224 71% 6%;
+    --popover: 222 47% 10%;
     --popover-foreground: 213 31% 91%;
 
     --secondary: 222 47% 15%;
@@ -88,30 +88,30 @@
     --muted: 223 47% 15%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 25 95% 53%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 222 47% 11%;
 
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 25 95% 53%;
     --warning-foreground: 222 47% 11%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
-    --ring: 160 84% 50%;
+    --border: 222 47% 18%;
+    --input: 222 47% 18%;
+    --ring: 217 91% 60%;
 
-    --sidebar-background: 224 71% 6%;
+    --sidebar-background: 222 47% 10%;
     --sidebar-foreground: 213 31% 91%;
-    --sidebar-primary: 160 84% 50%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 12%;
+    --sidebar-accent: 222 47% 15%;
     --sidebar-accent-foreground: 213 31% 91%;
-    --sidebar-border: 216 34% 17%;
-    --sidebar-ring: 160 84% 50%;
+    --sidebar-border: 222 47% 18%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
