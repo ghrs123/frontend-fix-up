@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      base_vocabulary: {
+        Row: {
+          audio_url: string | null
+          category: string
+          created_at: string
+          definition: string | null
+          difficulty: Database["public"]["Enums"]["difficulty_level"]
+          example_sentence: string | null
+          example_translation: string | null
+          id: string
+          pronunciation: string | null
+          translation: string
+          updated_at: string
+          word: string
+        }
+        Insert: {
+          audio_url?: string | null
+          category?: string
+          created_at?: string
+          definition?: string | null
+          difficulty?: Database["public"]["Enums"]["difficulty_level"]
+          example_sentence?: string | null
+          example_translation?: string | null
+          id?: string
+          pronunciation?: string | null
+          translation: string
+          updated_at?: string
+          word: string
+        }
+        Update: {
+          audio_url?: string | null
+          category?: string
+          created_at?: string
+          definition?: string | null
+          difficulty?: Database["public"]["Enums"]["difficulty_level"]
+          example_sentence?: string | null
+          example_translation?: string | null
+          id?: string
+          pronunciation?: string | null
+          translation?: string
+          updated_at?: string
+          word?: string
+        }
+        Relationships: []
+      }
       flashcard_reviews: {
         Row: {
           ease_factor_after: number
@@ -156,6 +201,57 @@ export type Database = {
         }
         Relationships: []
       }
+      practice_exercises: {
+        Row: {
+          audio_url: string | null
+          category: string
+          content: string
+          content_portuguese: string | null
+          created_at: string
+          difficulty: Database["public"]["Enums"]["difficulty_level"]
+          exercise_type: string
+          hints: Json | null
+          id: string
+          instructions: string
+          instructions_portuguese: string | null
+          reference_answer: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          audio_url?: string | null
+          category?: string
+          content: string
+          content_portuguese?: string | null
+          created_at?: string
+          difficulty?: Database["public"]["Enums"]["difficulty_level"]
+          exercise_type: string
+          hints?: Json | null
+          id?: string
+          instructions: string
+          instructions_portuguese?: string | null
+          reference_answer?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          audio_url?: string | null
+          category?: string
+          content?: string
+          content_portuguese?: string | null
+          created_at?: string
+          difficulty?: Database["public"]["Enums"]["difficulty_level"]
+          exercise_type?: string
+          hints?: Json | null
+          id?: string
+          instructions?: string
+          instructions_portuguese?: string | null
+          reference_answer?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -185,6 +281,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      quiz_questions: {
+        Row: {
+          category: string
+          correct_answer: string
+          created_at: string
+          difficulty: Database["public"]["Enums"]["difficulty_level"]
+          explanation: string | null
+          explanation_portuguese: string | null
+          grammar_topic_id: string | null
+          id: string
+          options: Json | null
+          question: string
+          question_type: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          correct_answer: string
+          created_at?: string
+          difficulty?: Database["public"]["Enums"]["difficulty_level"]
+          explanation?: string | null
+          explanation_portuguese?: string | null
+          grammar_topic_id?: string | null
+          id?: string
+          options?: Json | null
+          question: string
+          question_type?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          correct_answer?: string
+          created_at?: string
+          difficulty?: Database["public"]["Enums"]["difficulty_level"]
+          explanation?: string | null
+          explanation_portuguese?: string | null
+          grammar_topic_id?: string | null
+          id?: string
+          options?: Json | null
+          question?: string
+          question_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_grammar_topic_id_fkey"
+            columns: ["grammar_topic_id"]
+            isOneToOne: false
+            referencedRelation: "grammar_topics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       texts: {
         Row: {
