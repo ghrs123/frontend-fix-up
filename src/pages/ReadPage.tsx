@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { ArrowLeft, Eye, EyeOff, Volume2 } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Volume2, Loader2, Square } from 'lucide-react';
 
 type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
 
@@ -39,6 +39,40 @@ const difficultyLabels: Record<DifficultyLevel, string> = {
   advanced: 'Avançado',
 };
 
+// Get the best English voice available
+function getEnglishVoice(): SpeechSynthesisVoice | null {
+  const voices = speechSynthesis.getVoices();
+  
+  // Prefer native English voices in this order
+  const preferredVoices = [
+    'Google UK English Female',
+    'Google UK English Male', 
+    'Google US English',
+    'Microsoft Zira',
+    'Microsoft David',
+    'Samantha', // macOS
+    'Daniel', // macOS UK
+    'Karen', // macOS Australian
+    'Alex', // macOS
+  ];
+  
+  // First try to find a preferred voice
+  for (const preferred of preferredVoices) {
+    const voice = voices.find(v => v.name.includes(preferred));
+    if (voice) return voice;
+  }
+  
+  // Then look for any English voice
+  const englishVoice = voices.find(v => 
+    v.lang.startsWith('en-') && 
+    (v.lang.includes('GB') || v.lang.includes('US') || v.lang.includes('AU'))
+  );
+  if (englishVoice) return englishVoice;
+  
+  // Fallback to any English voice
+  return voices.find(v => v.lang.startsWith('en')) || null;
+}
+
 export default function ReadPage() {
   const { id } = useParams<{ id: string }>();
   const { user, isAuthenticated } = useAuth();
@@ -46,6 +80,19 @@ export default function ReadPage() {
   const [showTranslation, setShowTranslation] = useState(false);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [isDictionaryOpen, setIsDictionaryOpen] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Load voices
+  useEffect(() => {
+    const loadVoices = () => {
+      speechSynthesis.getVoices();
+    };
+    loadVoices();
+    speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    return () => {
+      speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+    };
+  }, []);
 
   const { data: text, isLoading } = useQuery({
     queryKey: ['text', id],
@@ -97,11 +144,42 @@ export default function ReadPage() {
 
   const speakText = useCallback(() => {
     if (!text?.content) return;
+    
+    // If already speaking, stop
+    if (isSpeaking) {
+      speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+    
+    // Cancel any previous speech
+    speechSynthesis.cancel();
+    
     const utterance = new SpeechSynthesisUtterance(text.content);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.9;
+    utterance.lang = 'en-GB'; // British English tends to be clearer
+    utterance.rate = 0.85; // Slower rate for comprehension
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    // Try to use a good English voice
+    const voice = getEnglishVoice();
+    if (voice) {
+      utterance.voice = voice;
+    }
+    
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    
     speechSynthesis.speak(utterance);
-  }, [text?.content]);
+  }, [text?.content, isSpeaking]);
+
+  // Clean up speech on unmount
+  useEffect(() => {
+    return () => {
+      speechSynthesis.cancel();
+    };
+  }, []);
 
   const renderInteractiveText = (content: string) => {
     const words = content.split(/(\s+)/);
@@ -189,9 +267,22 @@ export default function ReadPage() {
             </Label>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={speakText}>
-              <Volume2 className="mr-2 h-4 w-4" />
-              Ouvir
+            <Button 
+              variant={isSpeaking ? "secondary" : "outline"} 
+              size="sm" 
+              onClick={speakText}
+            >
+              {isSpeaking ? (
+                <>
+                  <Square className="mr-2 h-4 w-4" />
+                  Parar
+                </>
+              ) : (
+                <>
+                  <Volume2 className="mr-2 h-4 w-4" />
+                  Ouvir
+                </>
+              )}
             </Button>
             {isAuthenticated && (
               <Button 

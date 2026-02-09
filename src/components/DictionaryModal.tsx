@@ -32,9 +32,49 @@ interface WordDefinition {
   examples: string[];
 }
 
+// Get the best English voice available
+function getEnglishVoice(): SpeechSynthesisVoice | null {
+  const voices = speechSynthesis.getVoices();
+  
+  // Prefer native English voices in this order
+  const preferredVoices = [
+    'Google UK English Female',
+    'Google UK English Male', 
+    'Google US English',
+    'Microsoft Zira',
+    'Microsoft David',
+    'Samantha', // macOS
+    'Daniel', // macOS UK
+    'Karen', // macOS Australian
+    'Alex', // macOS
+  ];
+  
+  // First try to find a preferred voice
+  for (const preferred of preferredVoices) {
+    const voice = voices.find(v => v.name.includes(preferred));
+    if (voice) return voice;
+  }
+  
+  // Then look for any English voice
+  const englishVoice = voices.find(v => 
+    v.lang.startsWith('en-') && 
+    (v.lang.includes('GB') || v.lang.includes('US') || v.lang.includes('AU'))
+  );
+  if (englishVoice) return englishVoice;
+  
+  // Fallback to any English voice
+  return voices.find(v => v.lang.startsWith('en')) || null;
+}
+
 export function DictionaryModal({ word, open, onOpenChange, textId }: DictionaryModalProps) {
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Load voices
+  useEffect(() => {
+    speechSynthesis.getVoices();
+  }, []);
 
   // Fetch definition from cache or API
   const { data: definition, isLoading, error } = useQuery({
@@ -152,15 +192,48 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
   const speakWord = useCallback(() => {
     if (!word) return;
     
+    // Cancel any ongoing speech
+    speechSynthesis.cancel();
+    
+    // If there's an audio URL from the API, use that first (highest quality)
     if (definition?.audio_url) {
       const audio = new Audio(definition.audio_url);
-      audio.play();
+      audio.playbackRate = 0.9; // Slightly slower
+      setIsSpeaking(true);
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        // Fallback to speech synthesis if audio fails
+        speakWithSynthesis(word);
+      };
+      audio.play().catch(() => {
+        setIsSpeaking(false);
+        speakWithSynthesis(word);
+      });
     } else {
-      const utterance = new SpeechSynthesisUtterance(word);
-      utterance.lang = 'en-US';
-      speechSynthesis.speak(utterance);
+      speakWithSynthesis(word);
     }
   }, [word, definition?.audio_url]);
+
+  const speakWithSynthesis = (text: string) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-GB'; // British English tends to be clearer
+    utterance.rate = 0.8; // Slower for clarity
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    // Try to use a good English voice
+    const voice = getEnglishVoice();
+    if (voice) {
+      utterance.voice = voice;
+    }
+    
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    
+    speechSynthesis.speak(utterance);
+  };
 
   if (!word) return null;
 
@@ -176,8 +249,18 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
                 {definition.phonetic}
               </span>
             )}
-            <Button variant="ghost" size="icon" onClick={speakWord} className="ml-auto">
-              <Volume2 className="h-4 w-4" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={speakWord} 
+              disabled={isSpeaking}
+              className="ml-auto"
+            >
+              {isSpeaking ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Volume2 className="h-4 w-4" />
+              )}
             </Button>
           </DialogTitle>
           {definition?.part_of_speech && (

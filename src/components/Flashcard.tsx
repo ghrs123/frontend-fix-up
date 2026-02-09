@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { RotateCcw, Volume2 } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { RotateCcw, Volume2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -12,14 +12,84 @@ interface FlashcardProps {
   onDontKnow?: () => void;
 }
 
+// Get the best English voice available
+function getEnglishVoice(): SpeechSynthesisVoice | null {
+  const voices = speechSynthesis.getVoices();
+  
+  // Prefer native English voices in this order
+  const preferredVoices = [
+    'Google UK English Female',
+    'Google UK English Male', 
+    'Google US English',
+    'Microsoft Zira',
+    'Microsoft David',
+    'Samantha', // macOS
+    'Daniel', // macOS UK
+    'Karen', // macOS Australian
+    'Alex', // macOS
+  ];
+  
+  // First try to find a preferred voice
+  for (const preferred of preferredVoices) {
+    const voice = voices.find(v => v.name.includes(preferred));
+    if (voice) return voice;
+  }
+  
+  // Then look for any English voice
+  const englishVoice = voices.find(v => 
+    v.lang.startsWith('en-') && 
+    (v.lang.includes('GB') || v.lang.includes('US') || v.lang.includes('AU'))
+  );
+  if (englishVoice) return englishVoice;
+  
+  // Fallback to any English voice
+  return voices.find(v => v.lang.startsWith('en')) || null;
+}
+
 export function Flashcard({ word, translation, example, phonetic, onKnow, onDontKnow }: FlashcardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voicesLoaded, setVoicesLoaded] = useState(false);
 
-  const handleSpeak = (text: string) => {
+  // Load voices when component mounts
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        setVoicesLoaded(true);
+      }
+    };
+
+    loadVoices();
+    speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    
+    return () => {
+      speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+    };
+  }, []);
+
+  const handleSpeak = useCallback((text: string) => {
+    // Cancel any ongoing speech
+    speechSynthesis.cancel();
+    
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
+    utterance.lang = "en-GB"; // British English tends to be clearer
+    utterance.rate = 0.85; // Slower rate for clarity
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    // Try to use a good English voice
+    const voice = getEnglishVoice();
+    if (voice) {
+      utterance.voice = voice;
+    }
+    
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    
     speechSynthesis.speak(utterance);
-  };
+  }, []);
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -39,12 +109,17 @@ export function Flashcard({ word, translation, example, phonetic, onKnow, onDont
               <Button
                 variant="ghost"
                 size="icon"
+                disabled={isSpeaking}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleSpeak(word);
                 }}
               >
-                <Volume2 className="h-5 w-5" />
+                {isSpeaking ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Volume2 className="h-5 w-5" />
+                )}
               </Button>
             </div>
             <p className="text-sm text-muted-foreground mb-2">Inglês</p>
