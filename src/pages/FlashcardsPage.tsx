@@ -10,6 +10,18 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { 
   Layers, 
@@ -19,7 +31,9 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { calculateSM2, isDueForReview, formatInterval, getQualityLabel, getQualityVariant } from '@/lib/sm2';
 import { cn } from '@/lib/utils';
@@ -44,6 +58,14 @@ function FlashcardsContent() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [reviewMode, setReviewMode] = useState<'due' | 'all'>('due');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newCard, setNewCard] = useState({
+    word: '',
+    translation: '',
+    definition: '',
+    example_sentence: '',
+    pronunciation: '',
+  });
 
   // Fetch flashcards
   const { data: flashcards, isLoading } = useQuery({
@@ -134,9 +156,63 @@ function FlashcardsContent() {
     },
   });
 
+  // Add flashcard mutation
+  const addMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      const { error } = await supabase
+        .from('flashcards')
+        .insert({
+          user_id: user.id,
+          word: newCard.word,
+          translation: newCard.translation,
+          definition: newCard.definition || null,
+          example_sentence: newCard.example_sentence || null,
+          pronunciation: newCard.pronunciation || null,
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Flashcard adicionado!');
+      setNewCard({ word: '', translation: '', definition: '', example_sentence: '', pronunciation: '' });
+      setIsAddDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['flashcards'] });
+    },
+    onError: () => {
+      toast.error('Erro ao adicionar flashcard');
+    },
+  });
+
+  // Delete flashcard mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (cardId: string) => {
+      const { error } = await supabase
+        .from('flashcards')
+        .delete()
+        .eq('id', cardId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Flashcard removido!');
+      queryClient.invalidateQueries({ queryKey: ['flashcards'] });
+    },
+    onError: () => {
+      toast.error('Erro ao remover flashcard');
+    },
+  });
+
   const handleReview = (quality: number) => {
     if (!currentCard) return;
     reviewMutation.mutate({ cardId: currentCard.id, quality });
+  };
+
+  const handleAddCard = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCard.word || !newCard.translation) {
+      toast.error('Preencha a palavra e a tradução');
+      return;
+    }
+    addMutation.mutate();
   };
 
   const speakWord = (word: string) => {
@@ -172,11 +248,86 @@ function FlashcardsContent() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Flashcards</h1>
-        <p className="text-muted-foreground">
-          Revise o seu vocabulário com repetição espaçada
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Flashcards</h1>
+          <p className="text-muted-foreground">
+            Revise o seu vocabulário com repetição espaçada
+          </p>
+        </div>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <form onSubmit={handleAddCard}>
+              <DialogHeader>
+                <DialogTitle>Novo Flashcard</DialogTitle>
+                <DialogDescription>
+                  Adicione uma nova palavra ao seu vocabulário
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="word">Palavra (Inglês) *</Label>
+                  <Input
+                    id="word"
+                    value={newCard.word}
+                    onChange={(e) => setNewCard({ ...newCard, word: e.target.value })}
+                    placeholder="Hello"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="translation">Tradução (Português) *</Label>
+                  <Input
+                    id="translation"
+                    value={newCard.translation}
+                    onChange={(e) => setNewCard({ ...newCard, translation: e.target.value })}
+                    placeholder="Olá"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="pronunciation">Pronúncia</Label>
+                  <Input
+                    id="pronunciation"
+                    value={newCard.pronunciation}
+                    onChange={(e) => setNewCard({ ...newCard, pronunciation: e.target.value })}
+                    placeholder="/həˈloʊ/"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="definition">Definição</Label>
+                  <Textarea
+                    id="definition"
+                    value={newCard.definition}
+                    onChange={(e) => setNewCard({ ...newCard, definition: e.target.value })}
+                    placeholder="A greeting used when meeting someone"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="example">Exemplo</Label>
+                  <Textarea
+                    id="example"
+                    value={newCard.example_sentence}
+                    onChange={(e) => setNewCard({ ...newCard, example_sentence: e.target.value })}
+                    placeholder="Hello, how are you?"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={addMutation.isPending}>
+                  {addMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  Adicionar
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Tabs defaultValue="review" className="space-y-6">
@@ -207,7 +358,7 @@ function FlashcardsContent() {
           {cardsToReview.length === 0 ? (
             <Card className="py-12">
               <CardContent className="text-center">
-                <CheckCircle2 className="mx-auto h-12 w-12 text-green-500 mb-4" />
+                <CheckCircle2 className="mx-auto h-12 w-12 text-primary mb-4" />
                 <h3 className="text-lg font-medium">
                   {reviewMode === 'due' 
                     ? 'Nenhum card pendente!' 
@@ -216,7 +367,7 @@ function FlashcardsContent() {
                 <p className="text-muted-foreground">
                   {reviewMode === 'due'
                     ? 'Volte mais tarde ou revise todos os cards.'
-                    : 'Adicione palavras através da leitura de textos.'}
+                    : 'Clique em "Adicionar" para criar novos flashcards.'}
                 </p>
               </CardContent>
             </Card>
