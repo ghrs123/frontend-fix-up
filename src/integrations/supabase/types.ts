@@ -111,6 +111,7 @@ export type Database = {
           example_sentence: string | null
           id: string
           interval: number
+          is_active: boolean
           next_review_at: string | null
           pronunciation: string | null
           repetitions: number
@@ -127,6 +128,7 @@ export type Database = {
           example_sentence?: string | null
           id?: string
           interval?: number
+          is_active?: boolean
           next_review_at?: string | null
           pronunciation?: string | null
           repetitions?: number
@@ -143,6 +145,7 @@ export type Database = {
           example_sentence?: string | null
           id?: string
           interval?: number
+          is_active?: boolean
           next_review_at?: string | null
           pronunciation?: string | null
           repetitions?: number
