@@ -1,73 +1,120 @@
-# Welcome to your Lovable project
+# English Study App
 
-## Project info
+Uma aplicação completa para aprender inglês, construída com React, TypeScript, Tailwind CSS e Supabase.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🚀 Funcionalidades
 
-## How can I edit this code?
+### Para Estudantes
+- **📖 Leitura Interativa**: Leia textos em inglês e clique nas palavras para ver definições
+- **🃏 Flashcards**: Memorize vocabulário com repetição espaçada (algoritmo SM2)
+- **📚 Gramática**: Aprenda regras gramaticais com explicações em português e inglês
+- **🏆 Quiz**: Teste os seus conhecimentos com questões interativas
+- **✍️ Prática**: Exercícios de tradução, escrita e compreensão
+- **📊 Progresso**: Acompanhe o seu progresso de aprendizagem
 
-There are several ways of editing your application.
+### Para Administradores
+- Gestão completa de textos, gramática, vocabulário, quizzes e exercícios
+- Painel de administração protegido por roles
 
-**Use Lovable**
+## 🛠️ Stack Tecnológica
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Backend**: Supabase (PostgreSQL + Auth + Storage)
+- **State Management**: TanStack Query (React Query)
+- **Routing**: React Router v6
 
-Changes made via Lovable will be committed automatically to this repo.
+## 📁 Estrutura do Projeto
 
-**Use your preferred IDE**
+```
+├── src/
+│   ├── components/       # Componentes React reutilizáveis
+│   │   ├── admin/       # Componentes do painel de administração
+│   │   └── ui/          # Componentes shadcn/ui
+│   ├── contexts/        # Contextos React (Theme)
+│   ├── hooks/           # Custom hooks (useAuth, etc.)
+│   ├── integrations/    # Integrações (Supabase client & types)
+│   ├── lib/             # Utilitários (SM2 algorithm, utils)
+│   ├── pages/           # Páginas da aplicação
+│   └── data/            # Dados estáticos
+├── supabase/
+│   ├── migrations/      # Migrações da base de dados
+│   └── seeds/           # Dados de seed para popular a BD
+└── public/              # Assets estáticos
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🗄️ Base de Dados
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Tabelas Principais
+- `texts` - Textos para leitura
+- `grammar_topics` - Tópicos de gramática
+- `base_vocabulary` - Vocabulário base (importável para flashcards)
+- `flashcards` - Flashcards pessoais dos utilizadores
+- `flashcard_reviews` - Histórico de revisões
+- `quiz_questions` - Questões de quiz
+- `practice_exercises` - Exercícios de prática
+- `profiles` - Perfis de utilizadores
+- `user_roles` - Roles (admin/user)
+- `user_progress` - Progresso dos utilizadores
 
-Follow these steps:
+### Seeds
+Os ficheiros de seed estão em `supabase/seeds/`:
+- `001_grammar_topics.sql` - 12 tópicos de gramática
+- `002_texts_beginner.sql` - 10 textos iniciantes
+- `003_texts_intermediate.sql` - 10 textos intermédios
+- `004_texts_advanced.sql` - 10 textos avançados
+- `005_base_vocabulary.sql` - 60+ palavras de vocabulário
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🔐 Autenticação e Segurança
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- Autenticação via Supabase Auth
+- Row Level Security (RLS) em todas as tabelas
+- Sistema de roles (admin/user) com função `has_role()`
+- Perfis criados automaticamente via trigger
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 🚀 Como Começar
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### Desenvolvimento Local
+
+```bash
+# Clonar o repositório
+git clone https://github.com/ghrs123/english-study-app.git
+
+# Navegar para o diretório
+cd english-study-app
+
+# Instalar dependências
+npm install
+
+# Iniciar servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Variáveis de Ambiente
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Para desenvolvimento local, crie um ficheiro `.env.local`:
 
-**Use GitHub Codespaces**
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Popular a Base de Dados
 
-## What technologies are used for this project?
+Execute os ficheiros de seed em ordem:
 
-This project is built with:
+```bash
+# Usando psql
+psql -h <host> -U postgres -d postgres -f supabase/seeds/001_grammar_topics.sql
+psql -h <host> -U postgres -d postgres -f supabase/seeds/002_texts_beginner.sql
+# ... etc
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🔗 Links
 
-## How can I deploy this project?
+- **Repositório**: https://github.com/ghrs123/english-study-app
+- **Lovable Project**: https://lovable.dev/projects/196988dd-950a-4079-aa54-d586c5fe5d04
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## 📝 Licença
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+MIT
