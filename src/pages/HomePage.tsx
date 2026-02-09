@@ -11,7 +11,9 @@ import {
   GraduationCap, 
   TrendingUp,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Trophy,
+  PenLine
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -70,6 +72,20 @@ export default function HomePage() {
       description: 'Aprenda regras gramaticais com explicações claras',
       href: '/grammar',
       color: 'bg-green-500/10 text-green-600',
+    },
+    {
+      icon: Trophy,
+      title: 'Quiz',
+      description: 'Teste os seus conhecimentos com questões interativas',
+      href: '/quiz',
+      color: 'bg-yellow-500/10 text-yellow-600',
+    },
+    {
+      icon: PenLine,
+      title: 'Prática',
+      description: 'Exercícios de tradução, escrita e compreensão',
+      href: '/practice',
+      color: 'bg-pink-500/10 text-pink-600',
     },
     {
       icon: TrendingUp,
@@ -150,7 +166,7 @@ export default function HomePage() {
         )}
 
         {/* Features Grid */}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
             <Card key={feature.href} className="group hover:shadow-md transition-shadow">
               <CardHeader>

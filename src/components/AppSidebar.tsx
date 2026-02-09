@@ -26,6 +26,8 @@ import {
   TrendingUp,
   User,
   Layers,
+  Trophy,
+  PenLine,
 } from 'lucide-react';
 
 const mainNavItems = [
@@ -33,6 +35,8 @@ const mainNavItems = [
   { path: '/reading', label: 'Leitura', icon: BookOpen },
   { path: '/flashcards', label: 'Flashcards', icon: Layers },
   { path: '/grammar', label: 'Gramática', icon: GraduationCap },
+  { path: '/quiz', label: 'Quiz', icon: Trophy },
+  { path: '/practice', label: 'Prática', icon: PenLine },
   { path: '/progress', label: 'Progresso', icon: TrendingUp },
 ];
 
