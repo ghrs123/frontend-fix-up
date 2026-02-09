@@ -14,7 +14,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
 import {
   Book,
   BookOpen,
@@ -28,7 +27,6 @@ import {
   User,
   Layers,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 const mainNavItems = [
   { path: '/', label: 'Home', icon: LayoutDashboard },
@@ -65,8 +63,8 @@ export function AppSidebar() {
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Utilizador';
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-border">
+    <Sidebar collapsible="icon" className="border-r">
+      <SidebarHeader className="border-b">
         <Link to="/" className="flex items-center gap-3 px-2 py-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <Book className="h-4 w-4 text-primary-foreground" />
@@ -125,7 +123,7 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border">
+      <SidebarFooter className="border-t">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={toggleTheme} tooltip="Alternar tema">
