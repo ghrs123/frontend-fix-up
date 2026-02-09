@@ -215,9 +215,37 @@ function FlashcardsContent() {
     addMutation.mutate();
   };
 
+  // Get the best English voice available
+  const getEnglishVoice = (): SpeechSynthesisVoice | null => {
+    const voices = speechSynthesis.getVoices();
+    
+    const preferredVoices = [
+      'Google UK English Female',
+      'Google UK English Male', 
+      'Google US English',
+      'Microsoft Zira',
+      'Microsoft David',
+      'Samantha',
+      'Daniel',
+    ];
+    
+    for (const preferred of preferredVoices) {
+      const voice = voices.find(v => v.name.includes(preferred));
+      if (voice) return voice;
+    }
+    
+    return voices.find(v => v.lang.startsWith('en')) || null;
+  };
+
   const speakWord = (word: string) => {
+    speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = 'en-US';
+    utterance.lang = 'en-GB';
+    utterance.rate = 0.85;
+    
+    const voice = getEnglishVoice();
+    if (voice) utterance.voice = voice;
+    
     speechSynthesis.speak(utterance);
   };
 
