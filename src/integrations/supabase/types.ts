@@ -14,16 +14,344 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      flashcard_reviews: {
+        Row: {
+          ease_factor_after: number
+          ease_factor_before: number
+          flashcard_id: string
+          id: string
+          interval_after: number
+          interval_before: number
+          quality: number
+          reviewed_at: string
+          user_id: string
+        }
+        Insert: {
+          ease_factor_after: number
+          ease_factor_before: number
+          flashcard_id: string
+          id?: string
+          interval_after: number
+          interval_before: number
+          quality: number
+          reviewed_at?: string
+          user_id: string
+        }
+        Update: {
+          ease_factor_after?: number
+          ease_factor_before?: number
+          flashcard_id?: string
+          id?: string
+          interval_after?: number
+          interval_before?: number
+          quality?: number
+          reviewed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_reviews_flashcard_id_fkey"
+            columns: ["flashcard_id"]
+            isOneToOne: false
+            referencedRelation: "flashcards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcards: {
+        Row: {
+          created_at: string
+          definition: string | null
+          ease_factor: number
+          example_sentence: string | null
+          id: string
+          interval: number
+          next_review_at: string | null
+          pronunciation: string | null
+          repetitions: number
+          text_id: string | null
+          translation: string
+          updated_at: string
+          user_id: string
+          word: string
+        }
+        Insert: {
+          created_at?: string
+          definition?: string | null
+          ease_factor?: number
+          example_sentence?: string | null
+          id?: string
+          interval?: number
+          next_review_at?: string | null
+          pronunciation?: string | null
+          repetitions?: number
+          text_id?: string | null
+          translation: string
+          updated_at?: string
+          user_id: string
+          word: string
+        }
+        Update: {
+          created_at?: string
+          definition?: string | null
+          ease_factor?: number
+          example_sentence?: string | null
+          id?: string
+          interval?: number
+          next_review_at?: string | null
+          pronunciation?: string | null
+          repetitions?: number
+          text_id?: string | null
+          translation?: string
+          updated_at?: string
+          user_id?: string
+          word?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcards_text_id_fkey"
+            columns: ["text_id"]
+            isOneToOne: false
+            referencedRelation: "texts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grammar_topics: {
+        Row: {
+          category: string
+          created_at: string
+          difficulty: Database["public"]["Enums"]["difficulty_level"]
+          examples: Json | null
+          explanation: string
+          explanation_portuguese: string | null
+          id: string
+          name: string
+          order_index: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          difficulty?: Database["public"]["Enums"]["difficulty_level"]
+          examples?: Json | null
+          explanation: string
+          explanation_portuguese?: string | null
+          id?: string
+          name: string
+          order_index?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          difficulty?: Database["public"]["Enums"]["difficulty_level"]
+          examples?: Json | null
+          explanation?: string
+          explanation_portuguese?: string | null
+          id?: string
+          name?: string
+          order_index?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          native_language: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          native_language?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          native_language?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      texts: {
+        Row: {
+          audio_url: string | null
+          category: string
+          content: string
+          content_portuguese: string | null
+          created_at: string
+          difficulty: Database["public"]["Enums"]["difficulty_level"]
+          id: string
+          title: string
+          updated_at: string
+          word_count: number | null
+        }
+        Insert: {
+          audio_url?: string | null
+          category?: string
+          content: string
+          content_portuguese?: string | null
+          created_at?: string
+          difficulty?: Database["public"]["Enums"]["difficulty_level"]
+          id?: string
+          title: string
+          updated_at?: string
+          word_count?: number | null
+        }
+        Update: {
+          audio_url?: string | null
+          category?: string
+          content?: string
+          content_portuguese?: string | null
+          created_at?: string
+          difficulty?: Database["public"]["Enums"]["difficulty_level"]
+          id?: string
+          title?: string
+          updated_at?: string
+          word_count?: number | null
+        }
+        Relationships: []
+      }
+      user_progress: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string
+          grammar_topic_id: string | null
+          id: string
+          progress_type: string
+          text_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          grammar_topic_id?: string | null
+          id?: string
+          progress_type: string
+          text_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          grammar_topic_id?: string | null
+          id?: string
+          progress_type?: string
+          text_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_progress_grammar_topic_id_fkey"
+            columns: ["grammar_topic_id"]
+            isOneToOne: false
+            referencedRelation: "grammar_topics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_progress_text_id_fkey"
+            columns: ["text_id"]
+            isOneToOne: false
+            referencedRelation: "texts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      word_definitions: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          definition: string | null
+          examples: Json | null
+          id: string
+          part_of_speech: string | null
+          phonetic: string | null
+          source: string | null
+          translation: string | null
+          word: string
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          definition?: string | null
+          examples?: Json | null
+          id?: string
+          part_of_speech?: string | null
+          phonetic?: string | null
+          source?: string | null
+          translation?: string | null
+          word: string
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          definition?: string | null
+          examples?: Json | null
+          id?: string
+          part_of_speech?: string | null
+          phonetic?: string | null
+          source?: string | null
+          translation?: string | null
+          word?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      difficulty_level: "beginner" | "intermediate" | "advanced"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +478,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      difficulty_level: ["beginner", "intermediate", "advanced"],
+    },
   },
 } as const
