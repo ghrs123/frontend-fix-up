@@ -18,6 +18,15 @@ interface Profile {
 }
 
 export function useAuth() {
+    const signInWithGoogle = async () => {
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+      return { error };
+    };
+
+    const signInWithGithub = async () => {
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: window.location.origin } });
+      return { error };
+    };
   const [state, setState] = useState<AuthState>({
     user: null,
     session: null,
@@ -148,5 +157,7 @@ export function useAuth() {
     signIn,
     signUp,
     signOut,
+    signInWithGoogle,
+    signInWithGithub,
   };
 }
