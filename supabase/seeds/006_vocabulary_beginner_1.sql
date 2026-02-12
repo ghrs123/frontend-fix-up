@@ -179,12 +179,4 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('live', 'viver', 'verbs', 'beginner', '/lɪv/', 'To be alive', 'I live in Portugal.', 'Vivo em Portugal.'),
 ('die', 'morrer', 'verbs', 'beginner', '/daɪ/', 'To stop living', 'Flowers die in winter.', 'As flores morrem no inverno.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;

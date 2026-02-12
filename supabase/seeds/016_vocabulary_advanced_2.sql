@@ -118,12 +118,4 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('henceforth', 'doravante', 'connectors', 'advanced', '/ˌhensˈfɔːrθ/', 'From now on', 'Henceforth known as.', 'Doravante conhecido como.'),
 ('insofar', 'na medida em que', 'connectors', 'advanced', '/ˌɪnsəˈfɑːr/', 'To the extent', 'Insofar as possible.', 'Na medida do possível.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;

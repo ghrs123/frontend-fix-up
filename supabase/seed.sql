@@ -1,6 +1,6 @@
 ﻿-- ===================================================================
 -- Seeds consolidados - Gerado automaticamente
--- Data: 2026-02-12 02:03:21
+-- Data: 2026-02-12 02:15:14
 -- ===================================================================
 
 -- -------------------------------------------------------------------
@@ -394,15 +394,7 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('live', 'viver', 'verbs', 'beginner', '/lɪv/', 'To be alive', 'I live in Portugal.', 'Vivo em Portugal.'),
 ('die', 'morrer', 'verbs', 'beginner', '/daɪ/', 'To stop living', 'Flowers die in winter.', 'As flores morrem no inverno.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;
 
 
 -- -------------------------------------------------------------------
@@ -581,15 +573,7 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('surprised', 'surpreendido', 'adjectives', 'beginner', '/sərˈpraɪzd/', 'Feeling surprise', 'I am surprised.', 'Estou surpreendido.'),
 ('lucky', 'sortudo', 'adjectives', 'beginner', '/ˈlʌki/', 'Having good fortune', 'You are lucky.', 'Tens sorte.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;
 
 
 -- -------------------------------------------------------------------
@@ -746,15 +730,7 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('pet', 'animal de estimação', 'animals', 'beginner', '/pet/', 'Domesticated animal', 'Do you have a pet?', 'Tens um animal de estimação?'),
 ('animal', 'animal', 'animals', 'beginner', '/ˈænɪməl/', 'Living creature', 'I love animals.', 'Adoro animais.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;
 
 
 -- -------------------------------------------------------------------
@@ -934,15 +910,7 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('I do not care', 'não me importo', 'expressions', 'beginner', '/aɪ doʊnt ker/', 'Indifference', 'I do not care about that.', 'Não me importo com isso.'),
 ('never mind', 'não faz mal', 'expressions', 'beginner', '/ˈnevər maɪnd/', 'Forget it', 'Never mind, it is okay.', 'Não faz mal, está bem.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;
 
 
 -- -------------------------------------------------------------------
@@ -1104,15 +1072,7 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('language', 'língua', 'general', 'beginner', '/ˈlæŋɡwɪdʒ/', 'Communication system', 'A new language.', 'Uma nova língua.'),
 ('country', 'campo', 'general', 'beginner', '/ˈkʌntri/', 'Rural area', 'In the country.', 'No campo.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;
 
 
 -- -------------------------------------------------------------------
@@ -1261,15 +1221,7 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('potential', 'potencial', 'adjectives', 'intermediate', '/pəˈtenʃəl/', 'Possible', 'Potential customers.', 'Clientes potenciais.'),
 ('alternative', 'alternativo', 'adjectives', 'intermediate', '/ɔːlˈtɜːrnətɪv/', 'Other option', 'An alternative plan.', 'Um plano alternativo.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;
 
 
 -- -------------------------------------------------------------------
@@ -1397,15 +1349,7 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('allergy', 'alergia', 'health', 'intermediate', '/ˈælərdʒi/', 'Immune reaction', 'Food allergy.', 'Alergia alimentar.'),
 ('infection', 'infeção', 'health', 'intermediate', '/ɪnˈfekʃən/', 'Disease caused by germs', 'Viral infection.', 'Infeção viral.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;
 
 
 -- -------------------------------------------------------------------
@@ -1575,15 +1519,7 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('focus', 'focar', 'verbs', 'intermediate', '/ˈfoʊkəs/', 'To concentrate', 'Focus on priorities.', 'Foca nas prioridades.'),
 ('generate', 'gerar', 'verbs', 'intermediate', '/ˈdʒenəreɪt/', 'To produce', 'Generate income.', 'Gerar rendimento.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;
 
 
 -- -------------------------------------------------------------------
@@ -1727,15 +1663,7 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('sympathetic', 'simpático', 'emotions', 'intermediate', '/ˌsɪmpəˈθetɪk/', 'Understanding', 'A sympathetic friend.', 'Um amigo compreensivo.'),
 ('empathetic', 'empático', 'emotions', 'intermediate', '/ˌempəˈθetɪk/', 'Sharing feelings', 'Be empathetic.', 'Sê empático.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;
 
 
 -- -------------------------------------------------------------------
@@ -1849,15 +1777,7 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('precedent', 'precedente', 'adjectives', 'advanced', '/ˈpresɪdənt/', 'Earlier example', 'Set a precedent.', 'Estabelecer um precedente.'),
 ('preliminary', 'preliminar', 'adjectives', 'advanced', '/prɪˈlɪmɪneri/', 'Initial', 'Preliminary results.', 'Resultados preliminares.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;
 
 
 -- -------------------------------------------------------------------
@@ -1983,15 +1903,7 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('henceforth', 'doravante', 'connectors', 'advanced', '/ˌhensˈfɔːrθ/', 'From now on', 'Henceforth known as.', 'Doravante conhecido como.'),
 ('insofar', 'na medida em que', 'connectors', 'advanced', '/ˌɪnsəˈfɑːr/', 'To the extent', 'Insofar as possible.', 'Na medida do possível.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;
 
 
 -- -------------------------------------------------------------------
@@ -2103,15 +2015,7 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('venture', 'empreendimento', 'business', 'advanced', '/ˈventʃər/', 'Business project', 'Joint venture.', 'Empreendimento conjunto.'),
 ('yield', 'rendimento', 'business', 'advanced', '/jiːld/', 'Return on investment', 'High yield.', 'Alto rendimento.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;
 
 
 -- -------------------------------------------------------------------
@@ -2221,13 +2125,5 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('tragedy', 'tragédia', 'literature', 'advanced', '/ˈtrædʒədi/', 'Sad story', 'Greek tragedy.', 'Tragédia grega.'),
 ('verse', 'verso', 'literature', 'advanced', '/vɜːrs/', 'Poetry line', 'Write in verse.', 'Escrever em verso.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;
 

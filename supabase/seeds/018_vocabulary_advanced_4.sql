@@ -102,12 +102,4 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('tragedy', 'tragédia', 'literature', 'advanced', '/ˈtrædʒədi/', 'Sad story', 'Greek tragedy.', 'Tragédia grega.'),
 ('verse', 'verso', 'literature', 'advanced', '/vɜːrs/', 'Poetry line', 'Write in verse.', 'Escrever em verso.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;

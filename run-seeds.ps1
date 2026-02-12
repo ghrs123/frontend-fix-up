@@ -39,11 +39,17 @@ foreach ($file in $seedFiles) {
 "@
     
     $content = Get-Content $file.FullName -Raw -Encoding UTF8
+    
+    # Corrigir ON CONFLICT se necessário
+    if ($content -match 'ON CONFLICT \(word\) DO UPDATE SET') {
+        $content = $content -replace 'ON CONFLICT \(word\) DO UPDATE SET[^\;]+\;', 'ON CONFLICT (word) DO NOTHING;'
+    }
+    
     $consolidatedContent += $content + "`r`n"
 }
 
-# Salva o arquivo consolidado
-$consolidatedContent | Out-File -FilePath $consolidatedFile -Encoding UTF8 -NoNewline
+# Salva o arquivo consolidado com encoding UTF-8
+[System.IO.File]::WriteAllText($consolidatedFile, $consolidatedContent, [System.Text.Encoding]::UTF8)
 
 Write-Host ""
 Write-Host "[OK] Arquivo consolidado criado: supabase\seed.sql" -ForegroundColor Green

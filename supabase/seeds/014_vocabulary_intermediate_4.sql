@@ -136,12 +136,4 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('sympathetic', 'simpático', 'emotions', 'intermediate', '/ˌsɪmpəˈθetɪk/', 'Understanding', 'A sympathetic friend.', 'Um amigo compreensivo.'),
 ('empathetic', 'empático', 'emotions', 'intermediate', '/ˌempəˈθetɪk/', 'Sharing feelings', 'Be empathetic.', 'Sê empático.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;

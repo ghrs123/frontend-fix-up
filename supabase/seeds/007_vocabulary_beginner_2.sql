@@ -171,12 +171,4 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('surprised', 'surpreendido', 'adjectives', 'beginner', '/sərˈpraɪzd/', 'Feeling surprise', 'I am surprised.', 'Estou surpreendido.'),
 ('lucky', 'sortudo', 'adjectives', 'beginner', '/ˈlʌki/', 'Having good fortune', 'You are lucky.', 'Tens sorte.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;

@@ -39,13 +39,39 @@
   (Confirme quando solicitado)
 
 ## 6. Rodar todos os seeds (.sql)
-- No PowerShell, execute:
-  ```powershell
-  Get-ChildItem "C:\workspace\frontend-fix-up\supabase\seeds\*.sql" | ForEach-Object {
-      Get-Content $_.FullName | supabase db query
-  }
-  ```
-- Isso irá aplicar todos os arquivos de seed automaticamente
+
+### ⚠️ IMPORTANTE: O comando `supabase db query` NÃO EXISTE
+
+O método anterior **NÃO FUNCIONA** porque o comando `query` não existe na Supabase CLI.
+
+### Solução Correta - Método Recomendado:
+
+**Opção 1: Via SQL Editor do Supabase (Mais Confiável)**
+
+1. Gerar arquivo consolidado:
+   ```powershell
+   .\run-seeds.ps1
+   ```
+   
+2. Executar no SQL Editor:
+   - Acesse: https://supabase.com/dashboard/project/trcnlengiehlzoxekijd/sql/new
+   - Abra o arquivo `supabase\seed.sql` gerado
+   - Copie todo o conteúdo
+   - Cole no SQL Editor
+   - Clique em "Run"
+   
+3. Verificar:
+   - Vá em Table Editor para ver os dados inseridos
+
+**Opção 2: Via Supabase CLI (Pode ter problemas de encoding)**
+
+```powershell
+# Primeiro, configure o config.toml (já está feito)
+# Depois execute:
+supabase db push --include-seed --yes
+```
+
+**Nota**: Se encontrar erros de sintaxe SQL, use a Opção 1 (SQL Editor)
 
 ## Referência do comando `db` da Supabase CLI
 

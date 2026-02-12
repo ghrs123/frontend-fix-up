@@ -120,12 +120,4 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('allergy', 'alergia', 'health', 'intermediate', '/ˈælərdʒi/', 'Immune reaction', 'Food allergy.', 'Alergia alimentar.'),
 ('infection', 'infeção', 'health', 'intermediate', '/ɪnˈfekʃən/', 'Disease caused by germs', 'Viral infection.', 'Infeção viral.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;

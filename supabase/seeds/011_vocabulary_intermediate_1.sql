@@ -141,12 +141,4 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('potential', 'potencial', 'adjectives', 'intermediate', '/pəˈtenʃəl/', 'Possible', 'Potential customers.', 'Clientes potenciais.'),
 ('alternative', 'alternativo', 'adjectives', 'intermediate', '/ɔːlˈtɜːrnətɪv/', 'Other option', 'An alternative plan.', 'Um plano alternativo.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;

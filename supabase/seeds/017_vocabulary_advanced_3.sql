@@ -104,12 +104,4 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('venture', 'empreendimento', 'business', 'advanced', '/ˈventʃər/', 'Business project', 'Joint venture.', 'Empreendimento conjunto.'),
 ('yield', 'rendimento', 'business', 'advanced', '/jiːld/', 'Return on investment', 'High yield.', 'Alto rendimento.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;

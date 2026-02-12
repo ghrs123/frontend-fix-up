@@ -106,12 +106,4 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('precedent', 'precedente', 'adjectives', 'advanced', '/ˈpresɪdənt/', 'Earlier example', 'Set a precedent.', 'Estabelecer um precedente.'),
 ('preliminary', 'preliminar', 'adjectives', 'advanced', '/prɪˈlɪmɪneri/', 'Initial', 'Preliminary results.', 'Resultados preliminares.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;

@@ -162,12 +162,4 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('focus', 'focar', 'verbs', 'intermediate', '/ˈfoʊkəs/', 'To concentrate', 'Focus on priorities.', 'Foca nas prioridades.'),
 ('generate', 'gerar', 'verbs', 'intermediate', '/ˈdʒenəreɪt/', 'To produce', 'Generate income.', 'Gerar rendimento.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;

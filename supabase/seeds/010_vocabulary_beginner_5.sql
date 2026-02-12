@@ -154,12 +154,4 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('language', 'língua', 'general', 'beginner', '/ˈlæŋɡwɪdʒ/', 'Communication system', 'A new language.', 'Uma nova língua.'),
 ('country', 'campo', 'general', 'beginner', '/ˈkʌntri/', 'Rural area', 'In the country.', 'No campo.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;

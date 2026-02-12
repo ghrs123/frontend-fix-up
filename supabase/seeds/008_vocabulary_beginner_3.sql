@@ -149,12 +149,4 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('pet', 'animal de estimação', 'animals', 'beginner', '/pet/', 'Domesticated animal', 'Do you have a pet?', 'Tens um animal de estimação?'),
 ('animal', 'animal', 'animals', 'beginner', '/ˈænɪməl/', 'Living creature', 'I love animals.', 'Adoro animais.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;

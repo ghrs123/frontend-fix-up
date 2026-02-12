@@ -172,12 +172,4 @@ INSERT INTO base_vocabulary (word, translation, category, difficulty, pronunciat
 ('I do not care', 'não me importo', 'expressions', 'beginner', '/aɪ doʊnt ker/', 'Indifference', 'I do not care about that.', 'Não me importo com isso.'),
 ('never mind', 'não faz mal', 'expressions', 'beginner', '/ˈnevər maɪnd/', 'Forget it', 'Never mind, it is okay.', 'Não faz mal, está bem.')
 
-ON CONFLICT (word) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  category = EXCLUDED.category,
-  difficulty = EXCLUDED.difficulty,
-  pronunciation = EXCLUDED.pronunciation,
-  definition = EXCLUDED.definition,
-  example_sentence = EXCLUDED.example_sentence,
-  example_translation = EXCLUDED.example_translation,
-  updated_at = now();
+ON CONFLICT (word) DO NOTHING;
