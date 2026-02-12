@@ -20,8 +20,10 @@ import {
   Eye,
   EyeOff,
   Lightbulb,
-  Volume2
+  Volume2,
+  Sparkles
 } from 'lucide-react';
+import { AIPracticeExercises } from '@/components/AIPracticeExercises';
 
 type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
 
@@ -446,8 +448,12 @@ function PracticeContent() {
         </p>
       </div>
 
-      <Tabs defaultValue="translation" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 max-w-lg">
+      <Tabs defaultValue="ai" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4 max-w-2xl">
+          <TabsTrigger value="ai">
+            <Sparkles className="mr-2 h-4 w-4 hidden sm:inline" />
+            IA
+          </TabsTrigger>
           <TabsTrigger value="translation">
             <Languages className="mr-2 h-4 w-4 hidden sm:inline" />
             Tradução
@@ -461,6 +467,10 @@ function PracticeContent() {
             Compreensão
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="ai">
+          <AIPracticeExercises />
+        </TabsContent>
 
         <TabsContent value="translation">
           <TranslationExercise texts={texts || []} />
