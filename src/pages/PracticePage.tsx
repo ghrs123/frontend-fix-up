@@ -49,6 +49,41 @@ function TranslationExercise({ texts }: { texts: Text[] }) {
   const [showAnswer, setShowAnswer] = useState(false);
   const [direction, setDirection] = useState<'en-pt' | 'pt-en'>('en-pt');
 
+  const getVoiceForLanguage = (lang: string): SpeechSynthesisVoice | null => {
+    const voices = speechSynthesis.getVoices();
+    
+    if (lang.startsWith('en')) {
+      const preferredVoices = [
+        'Google UK English Female',
+        'Google UK English Male', 
+        'Google US English',
+        'Microsoft Zira',
+        'Microsoft David',
+        'Samantha',
+        'Daniel',
+      ];
+      
+      for (const preferred of preferredVoices) {
+        const voice = voices.find(v => v.name.includes(preferred));
+        if (voice) return voice;
+      }
+    } else if (lang.startsWith('pt')) {
+      const preferredVoices = [
+        'Google português',
+        'Microsoft Maria',
+        'Joana',
+        'Luciana',
+      ];
+      
+      for (const preferred of preferredVoices) {
+        const voice = voices.find(v => v.name.includes(preferred));
+        if (voice) return voice;
+      }
+    }
+    
+    return voices.find(v => v.lang.startsWith(lang.substring(0, 2))) || null;
+  };
+
   const handleSelectText = (textId: string) => {
     const text = texts.find(t => t.id === textId);
     if (text) {
@@ -63,9 +98,14 @@ function TranslationExercise({ texts }: { texts: Text[] }) {
 
   const speakText = () => {
     if (!sourceText) return;
+    speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(sourceText);
     utterance.lang = direction === 'en-pt' ? 'en-US' : 'pt-PT';
     utterance.rate = 0.9;
+    
+    const voice = getVoiceForLanguage(utterance.lang);
+    if (voice) utterance.voice = voice;
+    
     speechSynthesis.speak(utterance);
   };
 
@@ -286,6 +326,27 @@ function ComprehensionExercise({ texts }: { texts: Text[] }) {
   const [showText, setShowText] = useState(true);
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
+  const getEnglishVoice = (): SpeechSynthesisVoice | null => {
+    const voices = speechSynthesis.getVoices();
+    
+    const preferredVoices = [
+      'Google UK English Female',
+      'Google UK English Male', 
+      'Google US English',
+      'Microsoft Zira',
+      'Microsoft David',
+      'Samantha',
+      'Daniel',
+    ];
+    
+    for (const preferred of preferredVoices) {
+      const voice = voices.find(v => v.name.includes(preferred));
+      if (voice) return voice;
+    }
+    
+    return voices.find(v => v.lang.startsWith('en')) || null;
+  };
+
   const handleSelectText = (textId: string) => {
     const text = texts.find(t => t.id === textId);
     if (text) {
@@ -297,9 +358,14 @@ function ComprehensionExercise({ texts }: { texts: Text[] }) {
 
   const speakText = () => {
     if (!selectedText?.content) return;
+    speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(selectedText.content);
     utterance.lang = 'en-US';
     utterance.rate = 0.9;
+    
+    const voice = getEnglishVoice();
+    if (voice) utterance.voice = voice;
+    
     speechSynthesis.speak(utterance);
   };
 
