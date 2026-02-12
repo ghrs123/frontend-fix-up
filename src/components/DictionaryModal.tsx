@@ -41,6 +41,8 @@ function getEnglishVoice(): SpeechSynthesisVoice | null {
     'Google UK English Female',
     'Google UK English Male', 
     'Google US English',
+    'Microsoft Zira Desktop',
+    'Microsoft David Desktop',
     'Microsoft Zira',
     'Microsoft David',
     'Samantha', // macOS
@@ -55,15 +57,16 @@ function getEnglishVoice(): SpeechSynthesisVoice | null {
     if (voice) return voice;
   }
   
-  // Then look for any English voice
+  // Then look for any English voice, but NOT Portuguese
   const englishVoice = voices.find(v => 
     v.lang.startsWith('en-') && 
-    (v.lang.includes('GB') || v.lang.includes('US') || v.lang.includes('AU'))
+    !v.lang.startsWith('pt-') &&
+    (v.lang.includes('GB') || v.lang.includes('US') || v.lang.includes('AU') || v.name.toLowerCase().includes('english'))
   );
   if (englishVoice) return englishVoice;
   
   // Fallback to any English voice
-  return voices.find(v => v.lang.startsWith('en')) || null;
+  return voices.find(v => v.lang.startsWith('en-')) || null;
 }
 
 export function DictionaryModal({ word, open, onOpenChange, textId }: DictionaryModalProps) {
@@ -216,23 +219,39 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
   }, [word, definition?.audio_url]);
 
   const speakWithSynthesis = (text: string) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-GB'; // British English tends to be clearer
-    utterance.rate = 0.8; // Slower for clarity
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-    
-    // Try to use a good English voice
-    const voice = getEnglishVoice();
-    if (voice) {
-      utterance.voice = voice;
+    const speak = () => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.8; // Slower for clarity
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      
+      // Try to use a good English voice
+      const voice = getEnglishVoice();
+      if (voice) {
+        utterance.voice = voice;
+        console.log('Using voice:', voice.name, voice.lang);
+      } else {
+        console.warn('No English voice found');
+      }
+      
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      
+      speechSynthesis.speak(utterance);
+    };
+
+    // Check if voices are loaded
+    const voices = speechSynthesis.getVoices();
+    if (voices.length === 0) {
+      // Wait for voices to load
+      speechSynthesis.addEventListener('voiceschanged', () => {
+        speak();
+      }, { once: true });
+    } else {
+      speak();
     }
-    
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    
-    speechSynthesis.speak(utterance);
   };
 
   if (!word) return null;

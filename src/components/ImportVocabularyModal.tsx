@@ -177,10 +177,13 @@ export function ImportVocabularyModal({ open, onOpenChange }: ImportVocabularyMo
   const getEnglishVoice = (): SpeechSynthesisVoice | null => {
     const voices = speechSynthesis.getVoices();
     
+    // Prefer voices specifically designed for English
     const preferredVoices = [
       'Google UK English Female',
       'Google UK English Male', 
       'Google US English',
+      'Microsoft Zira Desktop',
+      'Microsoft David Desktop',
       'Microsoft Zira',
       'Microsoft David',
       'Samantha',
@@ -192,21 +195,51 @@ export function ImportVocabularyModal({ open, onOpenChange }: ImportVocabularyMo
       if (voice) return voice;
     }
     
-    return voices.find(v => v.lang.startsWith('en')) || null;
+    // Fallback to any English voice, but NOT Portuguese
+    const englishVoice = voices.find(v => 
+      v.lang.startsWith('en-') && 
+      !v.lang.startsWith('pt-') &&
+      v.name.toLowerCase().includes('english')
+    );
+    
+    if (englishVoice) return englishVoice;
+    
+    // Last resort: any voice with en- language code
+    return voices.find(v => v.lang.startsWith('en-')) || null;
   };
 
   // Speak word
   const speakWord = (word: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = 'en-GB';
-    utterance.rate = 0.85;
     
-    const voice = getEnglishVoice();
-    if (voice) utterance.voice = voice;
-    
-    speechSynthesis.speak(utterance);
+    // Ensure voices are loaded
+    const speak = () => {
+      speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.85;
+      
+      const voice = getEnglishVoice();
+      if (voice) {
+        utterance.voice = voice;
+        console.log('Using voice:', voice.name, voice.lang);
+      } else {
+        console.warn('No English voice found');
+      }
+      
+      speechSynthesis.speak(utterance);
+    };
+
+    // Check if voices are loaded
+    const voices = speechSynthesis.getVoices();
+    if (voices.length === 0) {
+      // Wait for voices to load
+      speechSynthesis.addEventListener('voiceschanged', () => {
+        speak();
+      }, { once: true });
+    } else {
+      speak();
+    }
   };
 
   return (

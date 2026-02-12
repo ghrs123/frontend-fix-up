@@ -81,55 +81,102 @@ Translate: {"type":"translate","instruction":"...","sentence":"...","answer":"..
 Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese":"..."},...]}`;
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    // Configuração de IA - Suporta múltiplas APIs
+    const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "openai"; // openai, gemini, lovable
+    
+    let aiResponse: Response;
+    
+    if (AI_PROVIDER === "openai") {
+      // OpenAI (ChatGPT) - Recomendado
+      const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+      if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not configured");
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: exercisePrompt },
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "return_exercises",
-            description: "Return the generated exercises",
-            parameters: {
-              type: "object",
-              properties: {
-                exercises: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      type: { type: "string", enum: ["fill-blank", "translate", "match"] },
-                      instruction: { type: "string" },
-                      sentence: { type: "string" },
-                      answer: { type: "string" },
-                      hint: { type: "string" },
-                      options: { type: "array", items: { type: "string" } },
-                      direction: { type: "string" },
-                      pairs: { type: "array", items: { type: "object", properties: { english: { type: "string" }, portuguese: { type: "string" } }, required: ["english", "portuguese"] } },
+      aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini", // ou "gpt-4o" para melhor qualidade
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: exercisePrompt + "\n\nReturn ONLY a valid JSON object with the key 'exercises' containing an array of exactly 5 exercises." },
+          ],
+          temperature: 0.7,
+          response_format: { type: "json_object" },
+        }),
+      });
+    } else if (AI_PROVIDER === "gemini") {
+      // Google Gemini - Gratuito até 15 RPM
+      const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+      if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
+
+      aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: systemPrompt + "\n\n" + exercisePrompt + "\n\nReturn ONLY a valid JSON object with the key 'exercises' containing an array of exactly 5 exercises." }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            responseMimeType: "application/json",
+          },
+        }),
+      });
+    } else {
+      // Lovable (original)
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+      if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+      aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: exercisePrompt },
+          ],
+          tools: [{
+            type: "function",
+            function: {
+              name: "return_exercises",
+              description: "Return the generated exercises",
+              parameters: {
+                type: "object",
+                properties: {
+                  exercises: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        type: { type: "string", enum: ["fill-blank", "translate", "match"] },
+                        instruction: { type: "string" },
+                        sentence: { type: "string" },
+                        answer: { type: "string" },
+                        hint: { type: "string" },
+                        options: { type: "array", items: { type: "string" } },
+                        direction: { type: "string" },
+                        pairs: { type: "array", items: { type: "object", properties: { english: { type: "string" }, portuguese: { type: "string" } }, required: ["english", "portuguese"] } },
+                      },
+                      required: ["type", "instruction"],
                     },
-                    required: ["type", "instruction"],
                   },
                 },
+                required: ["exercises"],
+                additionalProperties: false,
               },
-              required: ["exercises"],
-              additionalProperties: false,
             },
-          },
-        }],
-        tool_choice: { type: "function", function: { name: "return_exercises" } },
-      }),
-    });
+          }],
+          tool_choice: { type: "function", function: { name: "return_exercises" } },
+        }),
+      });
+    }
 
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
@@ -148,10 +195,23 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
     }
 
     const aiData = await aiResponse.json();
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) throw new Error("No tool call response");
+    let exercises;
 
-    const exercises = JSON.parse(toolCall.function.arguments);
+    // Parse response baseado no provider
+    if (AI_PROVIDER === "openai") {
+      const content = aiData.choices?.[0]?.message?.content;
+      if (!content) throw new Error("No content in response");
+      exercises = JSON.parse(content);
+    } else if (AI_PROVIDER === "gemini") {
+      const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!content) throw new Error("No content in response");
+      exercises = JSON.parse(content);
+    } else {
+      // Lovable (original)
+      const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+      if (!toolCall) throw new Error("No tool call response");
+      exercises = JSON.parse(toolCall.function.arguments);
+    }
 
     return new Response(JSON.stringify(exercises), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

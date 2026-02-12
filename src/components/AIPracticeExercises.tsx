@@ -193,17 +193,38 @@ export function AIPracticeExercises() {
         body: { exerciseType, difficulty },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Function invocation error:', error);
+        if (error.message?.includes('FunctionsRelayError') || error.message?.includes('not found')) {
+          toast.error('A função de IA não está configurada. Por favor, contacte o administrador.');
+          return;
+        }
+        throw error;
+      }
+      
       if (data?.error) {
         toast.error(data.error);
+        return;
+      }
+
+      if (!data?.exercises || data.exercises.length === 0) {
+        toast.error('Nenhum exercício foi gerado. Verifica se tens flashcards adicionados.');
         return;
       }
 
       setExercises(data.exercises || []);
       toast.success('Exercícios gerados com sucesso!');
     } catch (err: any) {
-      console.error(err);
-      toast.error('Erro ao gerar exercícios.');
+      console.error('Generate exercises error:', err);
+      const errorMessage = err?.message || 'Erro ao gerar exercícios.';
+      
+      if (errorMessage.includes('fetch')) {
+        toast.error('Erro de conexão. Verifica a tua internet.');
+      } else if (errorMessage.includes('Unauthorized')) {
+        toast.error('Não autorizado. Faz login novamente.');
+      } else {
+        toast.error('Erro ao gerar exercícios. Tenta novamente mais tarde.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -221,7 +242,19 @@ export function AIPracticeExercises() {
             Gera exercícios personalizados baseados no teu vocabulário (flashcards)
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+               <strong>Múltiplas IAs Suportadas:</strong> Use Google Gemini (gratuito), OpenAI (ChatGPT), ou Lovable.
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+               <strong>Recomendado:</strong> Google Gemini - Totalmente gratuito até 15 req/min
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+               Consulte <code>CONFIGURAR_IA.md</code> para instruções detalhadas
+            </p>
+          </div>
+          
           <div className="flex flex-col sm:flex-row gap-3">
             <Select value={exerciseType} onValueChange={(v) => setExerciseType(v as ExerciseType)}>
               <SelectTrigger className="w-full sm:w-48">
