@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Volume2, Plus, BookOpen, Loader2 } from 'lucide-react';
+import { Volume2, Plus, BookOpen, Loader2, Languages } from 'lucide-react';
 
 interface DictionaryModalProps {
   word: string | null;
@@ -32,60 +32,58 @@ interface WordDefinition {
   examples: string[];
 }
 
+interface TranslationData {
+  translation: string;
+  definition_pt: string;
+  examples_pt?: string[];
+}
+
 // Get the best English voice available
 function getEnglishVoice(): SpeechSynthesisVoice | null {
   const voices = speechSynthesis.getVoices();
-  
-  // Prefer native English voices in this order
   const preferredVoices = [
     'Google UK English Female',
-    'Google UK English Male', 
+    'Google UK English Male',
     'Google US English',
     'Microsoft Zira Desktop',
     'Microsoft David Desktop',
     'Microsoft Zira',
     'Microsoft David',
-    'Samantha', // macOS
-    'Daniel', // macOS UK
-    'Karen', // macOS Australian
-    'Alex', // macOS
+    'Samantha',
+    'Daniel',
+    'Karen',
+    'Alex',
   ];
-  
-  // First try to find a preferred voice
   for (const preferred of preferredVoices) {
     const voice = voices.find(v => v.name.includes(preferred));
     if (voice) return voice;
   }
-  
-  // Then look for any English voice, but NOT Portuguese
-  const englishVoice = voices.find(v => 
-    v.lang.startsWith('en-') && 
+  const englishVoice = voices.find(v =>
+    v.lang.startsWith('en-') &&
     !v.lang.startsWith('pt-') &&
     (v.lang.includes('GB') || v.lang.includes('US') || v.lang.includes('AU') || v.name.toLowerCase().includes('english'))
   );
   if (englishVoice) return englishVoice;
-  
-  // Fallback to any English voice
   return voices.find(v => v.lang.startsWith('en-')) || null;
 }
+
+const TRANSLATE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/translate-definition`;
 
 export function DictionaryModal({ word, open, onOpenChange, textId }: DictionaryModalProps) {
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Load voices
   useEffect(() => {
     speechSynthesis.getVoices();
   }, []);
 
   // Fetch definition from cache or API
-  const { data: definition, isLoading, error } = useQuery({
+  const { data: definition, isLoading } = useQuery({
     queryKey: ['word-definition', word],
     queryFn: async () => {
       if (!word) return null;
 
-      // First, try to get from cache
       const { data: cached } = await supabase
         .from('word_definitions')
         .select('*')
@@ -99,7 +97,6 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
         } as WordDefinition;
       }
 
-      // If not cached, fetch from Free Dictionary API
       try {
         const response = await fetch(
           `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`
@@ -107,13 +104,8 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
 
         if (!response.ok) {
           return {
-            word,
-            definition: null,
-            translation: null,
-            phonetic: null,
-            audio_url: null,
-            part_of_speech: null,
-            examples: [],
+            word, definition: null, translation: null, phonetic: null,
+            audio_url: null, part_of_speech: null, examples: [],
           } as WordDefinition;
         }
 
@@ -132,7 +124,6 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
           examples: definitionData?.example ? [definitionData.example] : [],
         };
 
-        // Cache the result
         if (isAuthenticated && result.definition) {
           await supabase.from('word_definitions').insert({
             word: word.toLowerCase(),
@@ -149,20 +140,65 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
       } catch (err) {
         console.error('Error fetching definition:', err);
         return {
-          word,
-          definition: null,
-          translation: null,
-          phonetic: null,
-          audio_url: null,
-          part_of_speech: null,
-          examples: [],
+          word, definition: null, translation: null, phonetic: null,
+          audio_url: null, part_of_speech: null, examples: [],
         } as WordDefinition;
       }
     },
     enabled: !!word && open,
   });
 
-  // Add to flashcards mutation
+  // Auto-translate definition with AI
+  const { data: translationData, isLoading: isTranslating } = useQuery({
+    queryKey: ['word-translation', word, definition?.definition],
+    queryFn: async (): Promise<TranslationData | null> => {
+      if (!word || !definition?.definition) return null;
+
+      // Check if we already have a translation cached in word_definitions
+      if (definition.translation) {
+        return {
+          translation: definition.translation,
+          definition_pt: '',
+          examples_pt: [],
+        };
+      }
+
+      try {
+        const resp = await fetch(TRANSLATE_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            word: definition.word,
+            definition: definition.definition,
+            examples: definition.examples,
+          }),
+        });
+
+        if (!resp.ok) return null;
+
+        const data = await resp.json() as TranslationData;
+
+        // Cache the translation
+        if (data.translation) {
+          await supabase
+            .from('word_definitions')
+            .update({ translation: data.translation })
+            .eq('word', word.toLowerCase());
+        }
+
+        return data;
+      } catch (err) {
+        console.error('Translation error:', err);
+        return null;
+      }
+    },
+    enabled: !!word && open && !!definition?.definition,
+    staleTime: Infinity,
+  });
+
   const addFlashcardMutation = useMutation({
     mutationFn: async () => {
       if (!user || !word || !definition) throw new Error('Missing data');
@@ -170,7 +206,7 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
       const { error } = await supabase.from('flashcards').insert({
         user_id: user.id,
         word: word,
-        translation: definition.translation || '',
+        translation: translationData?.translation || definition.translation || '',
         definition: definition.definition || '',
         example_sentence: definition.examples?.[0] || '',
         pronunciation: definition.phonetic || '',
@@ -194,19 +230,15 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
 
   const speakWord = useCallback(() => {
     if (!word) return;
-    
-    // Cancel any ongoing speech
     speechSynthesis.cancel();
-    
-    // If there's an audio URL from the API, use that first (highest quality)
+
     if (definition?.audio_url) {
       const audio = new Audio(definition.audio_url);
-      audio.playbackRate = 0.9; // Slightly slower
+      audio.playbackRate = 0.9;
       setIsSpeaking(true);
       audio.onended = () => setIsSpeaking(false);
       audio.onerror = () => {
         setIsSpeaking(false);
-        // Fallback to speech synthesis if audio fails
         speakWithSynthesis(word);
       };
       audio.play().catch(() => {
@@ -222,33 +254,20 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
     const speak = () => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
-      utterance.rate = 0.8; // Slower for clarity
+      utterance.rate = 0.8;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
-      
-      // Try to use a good English voice
       const voice = getEnglishVoice();
-      if (voice) {
-        utterance.voice = voice;
-        console.log('Using voice:', voice.name, voice.lang);
-      } else {
-        console.warn('No English voice found');
-      }
-      
+      if (voice) utterance.voice = voice;
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = () => setIsSpeaking(false);
-      
       speechSynthesis.speak(utterance);
     };
 
-    // Check if voices are loaded
     const voices = speechSynthesis.getVoices();
     if (voices.length === 0) {
-      // Wait for voices to load
-      speechSynthesis.addEventListener('voiceschanged', () => {
-        speak();
-      }, { once: true });
+      speechSynthesis.addEventListener('voiceschanged', () => speak(), { once: true });
     } else {
       speak();
     }
@@ -268,10 +287,10 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
                 {definition.phonetic}
               </span>
             )}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={speakWord} 
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={speakWord}
               disabled={isSpeaking}
               className="ml-auto"
             >
@@ -298,22 +317,48 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
             </div>
           ) : definition?.definition ? (
             <>
+              {/* Translation badge */}
+              {(translationData?.translation || definition.translation) && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <Languages className="h-4 w-4 text-primary shrink-0" />
+                  <span className="font-semibold text-primary text-lg">
+                    {translationData?.translation || definition.translation}
+                  </span>
+                </div>
+              )}
+              {isTranslating && !translationData && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-muted">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">A traduzir...</span>
+                </div>
+              )}
+
               <div>
-                <h4 className="font-medium mb-1">Definição</h4>
+                <h4 className="font-medium mb-1">Definition</h4>
                 <p className="text-muted-foreground">{definition.definition}</p>
               </div>
 
-              {definition.translation && (
+              {/* Translated definition */}
+              {translationData?.definition_pt && (
                 <div>
-                  <h4 className="font-medium mb-1">Tradução</h4>
-                  <p className="text-muted-foreground">{definition.translation}</p>
+                  <h4 className="font-medium mb-1 flex items-center gap-1.5">
+                    <Languages className="h-3.5 w-3.5 text-primary" />
+                    Definição em Português
+                  </h4>
+                  <p className="text-muted-foreground">{translationData.definition_pt}</p>
                 </div>
               )}
 
               {definition.examples && definition.examples.length > 0 && (
                 <div>
-                  <h4 className="font-medium mb-1">Exemplo</h4>
+                  <h4 className="font-medium mb-1">Example</h4>
                   <p className="text-muted-foreground italic">"{definition.examples[0]}"</p>
+                  {translationData?.examples_pt?.[0] && (
+                    <p className="text-muted-foreground text-sm mt-1 flex items-center gap-1">
+                      <Languages className="h-3 w-3 text-primary shrink-0" />
+                      <span className="italic">"{translationData.examples_pt[0]}"</span>
+                    </p>
+                  )}
                 </div>
               )}
             </>
