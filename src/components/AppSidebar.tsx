@@ -20,6 +20,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   LogOut,
+  MessageCircle,
   Moon,
   Settings,
   Sun,
@@ -37,6 +38,7 @@ const mainNavItems = [
   { path: '/grammar', label: 'Gramática', icon: GraduationCap },
   { path: '/quiz', label: 'Quiz', icon: Trophy },
   { path: '/practice', label: 'Prática', icon: PenLine },
+  { path: '/chat', label: 'Chat IA', icon: MessageCircle },
   { path: '/progress', label: 'Progresso', icon: TrendingUp },
 ];
 

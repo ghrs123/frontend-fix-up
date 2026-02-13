@@ -12,6 +12,7 @@ import FlashcardsPage from "./pages/FlashcardsPage";
 import GrammarPage from "./pages/GrammarPage";
 import QuizPage from "./pages/QuizPage";
 import PracticePage from "./pages/PracticePage";
+import ChatPage from "./pages/ChatPage";
 import ProgressDashboard from "./pages/ProgressDashboard";
 import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/grammar" element={<GrammarPage />} />
             <Route path="/quiz" element={<QuizPage />} />
             <Route path="/practice" element={<PracticePage />} />
+            <Route path="/chat" element={<ChatPage />} />
             <Route path="/progress" element={<ProgressDashboard />} />
             <Route path="/admin" element={<AdminPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

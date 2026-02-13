@@ -3,3 +3,6 @@ project_id = "trcnlengiehlzoxekijd"
 [db.seed]
 enabled = true
 sql_paths = ['./seed.sql']
+
+[functions.ai-chat]
+verify_jwt = false
