@@ -6,3 +6,6 @@ sql_paths = ['./seed.sql']
 
 [functions.ai-chat]
 verify_jwt = false
+
+[functions.translate-definition]
+verify_jwt = false
