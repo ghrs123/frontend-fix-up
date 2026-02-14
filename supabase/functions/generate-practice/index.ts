@@ -15,7 +15,7 @@ serve(async (req) => {
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
@@ -82,7 +82,7 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
     }
 
     // Configuração de IA - Suporta múltiplas APIs
-    const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "openai"; // openai, gemini, lovable
+    const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "lovable"; // openai, gemini, lovable
     
     let aiResponse: Response;
     

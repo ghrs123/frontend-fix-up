@@ -243,15 +243,12 @@ export function AIPracticeExercises() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-               <strong>Múltiplas IAs Suportadas:</strong> Use Google Gemini (gratuito), OpenAI (ChatGPT), ou Lovable.
-            </p>
-            <p className="text-xs text-muted-foreground mt-2">
-               <strong>Recomendado:</strong> Google Gemini - Totalmente gratuito até 15 req/min
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+            <p className="text-sm text-foreground">
+               <strong>Exercícios gerados por IA</strong> baseados nos teus flashcards.
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-               Consulte <code>CONFIGURAR_IA.md</code> para instruções detalhadas
+               Adiciona palavras aos teus flashcards para exercícios mais personalizados.
             </p>
           </div>
           
