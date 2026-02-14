@@ -48,6 +48,8 @@ function getEnglishVoice(): SpeechSynthesisVoice | null {
     'Google UK English Female',
     'Google UK English Male', 
     'Google US English',
+    'Microsoft Zira Desktop',
+    'Microsoft David Desktop',
     'Microsoft Zira',
     'Microsoft David',
     'Samantha', // macOS
@@ -62,15 +64,16 @@ function getEnglishVoice(): SpeechSynthesisVoice | null {
     if (voice) return voice;
   }
   
-  // Then look for any English voice
+  // Then look for any English voice, but NOT Portuguese
   const englishVoice = voices.find(v => 
     v.lang.startsWith('en-') && 
-    (v.lang.includes('GB') || v.lang.includes('US') || v.lang.includes('AU'))
+    !v.lang.startsWith('pt-') &&
+    (v.lang.includes('GB') || v.lang.includes('US') || v.lang.includes('AU') || v.name.toLowerCase().includes('english'))
   );
   if (englishVoice) return englishVoice;
   
   // Fallback to any English voice
-  return voices.find(v => v.lang.startsWith('en')) || null;
+  return voices.find(v => v.lang.startsWith('en-') && !v.lang.startsWith('pt-')) || null;
 }
 
 export default function ReadPage() {
@@ -81,16 +84,51 @@ export default function ReadPage() {
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [isDictionaryOpen, setIsDictionaryOpen] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [englishVoice, setEnglishVoice] = useState<SpeechSynthesisVoice | null>(null);
 
-  // Load voices
+  // Load and select voice
   useEffect(() => {
-    const loadVoices = () => {
-      speechSynthesis.getVoices();
+    const selectVoice = () => {
+      const voices = speechSynthesis.getVoices();
+      console.log('🎤 ReadPage - Total vozes disponíveis:', voices.length);
+      
+      if (voices.length === 0) {
+        console.warn('⚠️ Nenhuma voz carregada ainda');
+        return;
+      }
+      
+      // List all available voices for debugging
+      voices.forEach(v => {
+        console.log(`  - ${v.name} (${v.lang})`);
+      });
+      
+      const voice = getEnglishVoice();
+      if (voice) {
+        console.log('✅ ReadPage - Voz em INGLÊS selecionada:', voice.name, voice.lang);
+        setEnglishVoice(voice);
+      } else {
+        console.error('❌ ReadPage - NENHUMA voz em inglês encontrada!');
+        console.error('⚠️ Você precisa instalar vozes em inglês no Windows!');
+        // DO NOT use Portuguese voice for English text - set to null
+        setEnglishVoice(null);
+        
+        // Show warning to user once
+        toast.error('Vozes em inglês não encontradas', {
+          description: 'Instale vozes em inglês no Windows para ouvir os textos.',
+          duration: 8000,
+        });
+      }
     };
-    loadVoices();
-    speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    
+    selectVoice();
+    
+    // Try again after a short delay to ensure voices are loaded
+    const timeout = setTimeout(selectVoice, 100);
+    
+    speechSynthesis.addEventListener('voiceschanged', selectVoice);
     return () => {
-      speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+      clearTimeout(timeout);
+      speechSynthesis.removeEventListener('voiceschanged', selectVoice);
     };
   }, []);
 
@@ -143,36 +181,103 @@ export default function ReadPage() {
   }, []);
 
   const speakText = useCallback(() => {
-    if (!text?.content) return;
+    console.log('🔊 Tentando falar texto em INGLÊS...');
+    console.log('  - Texto disponível:', !!text?.content);
+    console.log('  - Voz em inglês disponível:', !!englishVoice);
+    console.log('  - Voz nome:', englishVoice?.name);
+    
+    if (!text?.content) {
+      console.error('❌ Sem conteúdo de texto');
+      toast.error('Conteúdo de texto não disponível');
+      return;
+    }
     
     // If already speaking, stop
     if (isSpeaking) {
+      console.log('⏸️ Parando fala...');
       speechSynthesis.cancel();
       setIsSpeaking(false);
       return;
     }
     
+    // Try to get English voice
+    let voiceToUse = englishVoice;
+    
+    if (!voiceToUse) {
+      console.warn('⚠️ Voz em inglês não carregada, tentando buscar...');
+      const voices = speechSynthesis.getVoices();
+      console.log('  - Vozes disponíveis agora:', voices.length);
+      
+      if (voices.length > 0) {
+        // List all voices
+        voices.forEach(v => {
+          console.log(`    - ${v.name} (${v.lang})`);
+        });
+        
+        // ONLY accept English voices - NO Portuguese fallback
+        voiceToUse = getEnglishVoice();
+        
+        if (voiceToUse) {
+          console.log('✅ Voz em INGLÊS obtida:', voiceToUse.name, voiceToUse.lang);
+          setEnglishVoice(voiceToUse);
+        } else {
+          console.error('❌ NENHUMA voz em INGLÊS encontrada no sistema');
+          console.error('⚠️ Somente vozes em português disponíveis');
+          console.error('⚠️ NÃO vou falar texto em inglês com voz portuguesa');
+          
+          toast.error('Nenhuma voz em inglês instalada', {
+            description: 'Por favor, instale vozes em inglês no Windows para ouvir os textos em inglês.',
+            duration: 10000,
+          });
+          return;
+        }
+      } else {
+        console.error('❌ Nenhuma voz disponível no sistema');
+        toast.error('Nenhuma voz disponível. Recarregue a página.');
+        return;
+      }
+    }
+    
+    // Final check: make sure it's actually an English voice
+    if (!voiceToUse.lang.startsWith('en')) {
+      console.error('❌ ERRO: Voz selecionada NÃO é em inglês:', voiceToUse.name, voiceToUse.lang);
+      console.error('⚠️ Não vou falar texto em inglês com voz', voiceToUse.lang);
+      toast.error('Erro: Voz em inglês não disponível', {
+        description: 'A voz selecionada não é em inglês. Instale vozes em inglês no Windows.',
+        duration: 10000,
+      });
+      return;
+    }
+    
+    console.log('✅ Usando voz em INGLÊS:', voiceToUse.name, voiceToUse.lang);
+    console.log('▶️ Iniciando fala...');
+    
     // Cancel any previous speech
     speechSynthesis.cancel();
     
     const utterance = new SpeechSynthesisUtterance(text.content);
-    utterance.lang = 'en-GB'; // British English tends to be clearer
-    utterance.rate = 0.85; // Slower rate for comprehension
+    utterance.lang = 'en-US';
+    utterance.rate = 0.85;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
+    utterance.voice = voiceToUse;
     
-    // Try to use a good English voice
-    const voice = getEnglishVoice();
-    if (voice) {
-      utterance.voice = voice;
-    }
-    
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    utterance.onstart = () => {
+      console.log('✓ Fala iniciou');
+      setIsSpeaking(true);
+    };
+    utterance.onend = () => {
+      console.log('✓ Fala terminou');
+      setIsSpeaking(false);
+    };
+    utterance.onerror = (e) => {
+      console.error('❌ Erro na fala:', e);
+      setIsSpeaking(false);
+      toast.error('Erro ao reproduzir áudio');
+    };
     
     speechSynthesis.speak(utterance);
-  }, [text?.content, isSpeaking]);
+  }, [text?.content, isSpeaking, englishVoice]);
 
   // Clean up speech on unmount
   useEffect(() => {

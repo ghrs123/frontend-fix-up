@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -62,6 +62,37 @@ export function ImportVocabularyModal({ open, onOpenChange }: ImportVocabularyMo
   const [category, setCategory] = useState<string>('all');
   const [difficulty, setDifficulty] = useState<string>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [englishVoice, setEnglishVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [portugueseVoice, setPortugueseVoice] = useState<SpeechSynthesisVoice | null>(null);
+
+  // Detect language of text
+  const detectLanguage = (text: string): 'en' | 'pt' => {
+    const portugueseChars = /[àáâãçéêíóôõú]/i;
+    const portugueseWords = /\b(o|a|os|as|um|uma|de|da|do|em|para|com|que|não|sim|está|são)\b/i;
+    if (portugueseChars.test(text) || portugueseWords.test(text)) return 'pt';
+    return 'en';
+  };
+
+  // Select voices once
+  useEffect(() => {
+    const selectVoices = () => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length === 0) return;
+      
+      const enVoice = getEnglishVoice();
+      if (enVoice) setEnglishVoice(enVoice);
+      
+      const ptVoice = voices.find(v => v.lang.startsWith('pt'));
+      if (ptVoice) setPortugueseVoice(ptVoice);
+    };
+
+    selectVoices();
+    speechSynthesis.addEventListener('voiceschanged', selectVoices);
+    
+    return () => {
+      speechSynthesis.removeEventListener('voiceschanged', selectVoices);
+    };
+  }, []);
 
   // Fetch base vocabulary
   const { data: vocabulary, isLoading } = useQuery({
@@ -212,34 +243,21 @@ export function ImportVocabularyModal({ open, onOpenChange }: ImportVocabularyMo
   const speakWord = (word: string, e: React.MouseEvent) => {
     e.stopPropagation();
     
-    // Ensure voices are loaded
-    const speak = () => {
-      speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(word);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.85;
-      
-      const voice = getEnglishVoice();
-      if (voice) {
-        utterance.voice = voice;
-        console.log('Using voice:', voice.name, voice.lang);
-      } else {
-        console.warn('No English voice found');
-      }
-      
-      speechSynthesis.speak(utterance);
-    };
-
-    // Check if voices are loaded
-    const voices = speechSynthesis.getVoices();
-    if (voices.length === 0) {
-      // Wait for voices to load
-      speechSynthesis.addEventListener('voiceschanged', () => {
-        speak();
-      }, { once: true });
-    } else {
-      speak();
+    const language = detectLanguage(word);
+    const voice = language === 'en' ? englishVoice : portugueseVoice;
+    
+    if (!voice) {
+      console.warn('⚠️ Voz não disponível para:', language);
+      return;
     }
+    
+    speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = language === 'en' ? 'en-US' : 'pt-PT';
+    utterance.rate = 0.85;
+    utterance.voice = voice;
+    
+    speechSynthesis.speak(utterance);
   };
 
   return (

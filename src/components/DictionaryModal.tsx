@@ -73,9 +73,35 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [englishVoice, setEnglishVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [portugueseVoice, setPortugueseVoice] = useState<SpeechSynthesisVoice | null>(null);
+
+  // Detect language of text
+  const detectLanguage = (text: string): 'en' | 'pt' => {
+    const portugueseChars = /[àáâãçéêíóôõú]/i;
+    const portugueseWords = /\b(o|a|os|as|um|uma|de|da|do|em|para|com|que|não|sim|está|são)\b/i;
+    if (portugueseChars.test(text) || portugueseWords.test(text)) return 'pt';
+    return 'en';
+  };
 
   useEffect(() => {
-    speechSynthesis.getVoices();
+    const selectVoices = () => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length === 0) return;
+      
+      const enVoice = getEnglishVoice();
+      if (enVoice) setEnglishVoice(enVoice);
+      
+      const ptVoice = voices.find(v => v.lang.startsWith('pt'));
+      if (ptVoice) setPortugueseVoice(ptVoice);
+    };
+    
+    selectVoices();
+    speechSynthesis.addEventListener('voiceschanged', selectVoices);
+    
+    return () => {
+      speechSynthesis.removeEventListener('voiceschanged', selectVoices);
+    };
   }, []);
 
   // Fetch definition from cache or API
@@ -251,6 +277,7 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
   }, [word, definition?.audio_url]);
 
   const speakWithSynthesis = (text: string) => {
+<<<<<<< Updated upstream
     const speak = () => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
@@ -270,7 +297,29 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
       speechSynthesis.addEventListener('voiceschanged', () => speak(), { once: true });
     } else {
       speak();
+=======
+    const language = detectLanguage(text);
+    const voice = language === 'en' ? englishVoice : portugueseVoice;
+    
+    if (!voice) {
+      console.warn('⚠️ Voz não disponível para:', language);
+      setIsSpeaking(false);
+      return;
+>>>>>>> Stashed changes
     }
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = language === 'en' ? 'en-US' : 'pt-PT';
+    utterance.rate = 0.8;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    utterance.voice = voice;
+    
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    
+    speechSynthesis.speak(utterance);
   };
 
   if (!word) return null;

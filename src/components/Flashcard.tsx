@@ -21,6 +21,8 @@ function getEnglishVoice(): SpeechSynthesisVoice | null {
     'Google UK English Female',
     'Google UK English Male', 
     'Google US English',
+    'Microsoft Zira Desktop',
+    'Microsoft David Desktop',
     'Microsoft Zira',
     'Microsoft David',
     'Samantha', // macOS
@@ -35,61 +37,77 @@ function getEnglishVoice(): SpeechSynthesisVoice | null {
     if (voice) return voice;
   }
   
-  // Then look for any English voice
+  // Then look for any English voice, but NOT Portuguese
   const englishVoice = voices.find(v => 
     v.lang.startsWith('en-') && 
-    (v.lang.includes('GB') || v.lang.includes('US') || v.lang.includes('AU'))
+    !v.lang.startsWith('pt-') &&
+    (v.lang.includes('GB') || v.lang.includes('US') || v.lang.includes('AU') || v.name.toLowerCase().includes('english'))
   );
   if (englishVoice) return englishVoice;
   
   // Fallback to any English voice
-  return voices.find(v => v.lang.startsWith('en')) || null;
+  return voices.find(v => v.lang.startsWith('en-') && !v.lang.startsWith('pt-')) || null;
 }
 
 export function Flashcard({ word, translation, example, phonetic, onKnow, onDontKnow }: FlashcardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [voicesLoaded, setVoicesLoaded] = useState(false);
+  const [englishVoice, setEnglishVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [portugueseVoice, setPortugueseVoice] = useState<SpeechSynthesisVoice | null>(null);
 
-  // Load voices when component mounts
+  // Detect language of text
+  const detectLanguage = (text: string): 'en' | 'pt' => {
+    const portugueseChars = /[àáâãçéêíóôõú]/i;
+    const portugueseWords = /\b(o|a|os|as|um|uma|de|da|do|em|para|com|que|não|sim|está|são)\b/i;
+    if (portugueseChars.test(text) || portugueseWords.test(text)) return 'pt';
+    return 'en';
+  };
+
+  // Select voices once when component mounts
   useEffect(() => {
-    const loadVoices = () => {
+    const selectVoices = () => {
       const voices = speechSynthesis.getVoices();
-      if (voices.length > 0) {
-        setVoicesLoaded(true);
-      }
+      if (voices.length === 0) return;
+      
+      const enVoice = getEnglishVoice();
+      if (enVoice) setEnglishVoice(enVoice);
+      
+      const ptVoice = voices.find(v => v.lang.startsWith('pt'));
+      if (ptVoice) setPortugueseVoice(ptVoice);
     };
 
-    loadVoices();
-    speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    selectVoices();
+    speechSynthesis.addEventListener('voiceschanged', selectVoices);
     
     return () => {
-      speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+      speechSynthesis.removeEventListener('voiceschanged', selectVoices);
     };
   }, []);
 
   const handleSpeak = useCallback((text: string) => {
-    // Cancel any ongoing speech
+    const language = detectLanguage(text);
+    const voice = language === 'en' ? englishVoice : portugueseVoice;
+    
+    if (!voice) {
+      console.warn('⚠️ Voz não disponível para:', language);
+      return;
+    }
+
     speechSynthesis.cancel();
     
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-GB"; // British English tends to be clearer
-    utterance.rate = 0.85; // Slower rate for clarity
+    utterance.lang = language === 'en' ? 'en-US' : 'pt-PT';
+    utterance.rate = 0.85;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
-    
-    // Try to use a good English voice
-    const voice = getEnglishVoice();
-    if (voice) {
-      utterance.voice = voice;
-    }
+    utterance.voice = voice;
     
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
     
     speechSynthesis.speak(utterance);
-  }, []);
+  }, [englishVoice, portugueseVoice]);
 
   return (
     <div className="w-full max-w-md mx-auto">

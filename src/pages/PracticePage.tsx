@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
@@ -48,41 +48,38 @@ function TranslationExercise({ texts }: { texts: Text[] }) {
   const [userTranslation, setUserTranslation] = useState('');
   const [showAnswer, setShowAnswer] = useState(false);
   const [direction, setDirection] = useState<'en-pt' | 'pt-en'>('en-pt');
+  const [englishVoice, setEnglishVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [portugueseVoice, setPortugueseVoice] = useState<SpeechSynthesisVoice | null>(null);
 
-  const getVoiceForLanguage = (lang: string): SpeechSynthesisVoice | null => {
-    const voices = speechSynthesis.getVoices();
-    
-    if (lang.startsWith('en')) {
-      const preferredVoices = [
-        'Google UK English Female',
-        'Google UK English Male', 
-        'Google US English',
-        'Microsoft Zira',
-        'Microsoft David',
-        'Samantha',
-        'Daniel',
-      ];
-      
-      for (const preferred of preferredVoices) {
-        const voice = voices.find(v => v.name.includes(preferred));
-        if (voice) return voice;
+  // Select voices once
+  useEffect(() => {
+    const selectVoices = () => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length === 0) return;
+
+      // English voice
+      const preferredEnglish = ['Google UK English Female', 'Google UK English Male', 'Google US English', 'Microsoft Zira', 'Microsoft David'];
+      let enVoice = null;
+      for (const preferred of preferredEnglish) {
+        enVoice = voices.find(v => v.name.includes(preferred));
+        if (enVoice) break;
       }
-    } else if (lang.startsWith('pt')) {
-      const preferredVoices = [
-        'Google português',
-        'Microsoft Maria',
-        'Joana',
-        'Luciana',
-      ];
-      
-      for (const preferred of preferredVoices) {
-        const voice = voices.find(v => v.name.includes(preferred));
-        if (voice) return voice;
+      setEnglishVoice(enVoice || voices.find(v => v.lang.startsWith('en')));
+
+      // Portuguese voice
+      const preferredPortuguese = ['Google português', 'Microsoft Maria', 'Joana', 'Luciana'];
+      let ptVoice = null;
+      for (const preferred of preferredPortuguese) {
+        ptVoice = voices.find(v => v.name.includes(preferred));
+        if (ptVoice) break;
       }
-    }
-    
-    return voices.find(v => v.lang.startsWith(lang.substring(0, 2))) || null;
-  };
+      setPortugueseVoice(ptVoice || voices.find(v => v.lang.startsWith('pt')));
+    };
+
+    selectVoices();
+    speechSynthesis.addEventListener('voiceschanged', selectVoices);
+    return () => speechSynthesis.removeEventListener('voiceschanged', selectVoices);
+  }, []);
 
   const handleSelectText = (textId: string) => {
     const text = texts.find(t => t.id === textId);
@@ -98,13 +95,18 @@ function TranslationExercise({ texts }: { texts: Text[] }) {
 
   const speakText = () => {
     if (!sourceText) return;
+    
+    const voice = direction === 'en-pt' ? englishVoice : portugueseVoice;
+    if (!voice) {
+      console.warn('⚠️ Voz não disponível');
+      return;
+    }
+    
     speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(sourceText);
     utterance.lang = direction === 'en-pt' ? 'en-US' : 'pt-PT';
     utterance.rate = 0.9;
-    
-    const voice = getVoiceForLanguage(utterance.lang);
-    if (voice) utterance.voice = voice;
+    utterance.voice = voice;
     
     speechSynthesis.speak(utterance);
   };
@@ -480,27 +482,27 @@ function ComprehensionExercise({ texts }: { texts: Text[] }) {
   const [selectedText, setSelectedText] = useState<Text | null>(null);
   const [showText, setShowText] = useState(true);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [englishVoice, setEnglishVoice] = useState<SpeechSynthesisVoice | null>(null);
 
-  const getEnglishVoice = (): SpeechSynthesisVoice | null => {
-    const voices = speechSynthesis.getVoices();
-    
-    const preferredVoices = [
-      'Google UK English Female',
-      'Google UK English Male', 
-      'Google US English',
-      'Microsoft Zira',
-      'Microsoft David',
-      'Samantha',
-      'Daniel',
-    ];
-    
-    for (const preferred of preferredVoices) {
-      const voice = voices.find(v => v.name.includes(preferred));
-      if (voice) return voice;
-    }
-    
-    return voices.find(v => v.lang.startsWith('en')) || null;
-  };
+  // Select voice once
+  useEffect(() => {
+    const selectVoice = () => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length === 0) return;
+      
+      const preferredVoices = ['Google UK English Female', 'Google UK English Male', 'Google US English', 'Microsoft Zira', 'Microsoft David'];
+      let enVoice = null;
+      for (const preferred of preferredVoices) {
+        enVoice = voices.find(v => v.name.includes(preferred));
+        if (enVoice) break;
+      }
+      setEnglishVoice(enVoice || voices.find(v => v.lang.startsWith('en') && !v.lang.startsWith('pt')));
+    };
+
+    selectVoice();
+    speechSynthesis.addEventListener('voiceschanged', selectVoice);
+    return () => speechSynthesis.removeEventListener('voiceschanged', selectVoice);
+  }, []);
 
   const handleSelectText = (textId: string) => {
     const text = texts.find(t => t.id === textId);
@@ -512,14 +514,13 @@ function ComprehensionExercise({ texts }: { texts: Text[] }) {
   };
 
   const speakText = () => {
-    if (!selectedText?.content) return;
+    if (!selectedText?.content || !englishVoice) return;
+    
     speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(selectedText.content);
     utterance.lang = 'en-US';
     utterance.rate = 0.9;
-    
-    const voice = getEnglishVoice();
-    if (voice) utterance.voice = voice;
+    utterance.voice = englishVoice;
     
     speechSynthesis.speak(utterance);
   };
