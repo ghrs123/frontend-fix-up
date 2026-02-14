@@ -277,27 +277,6 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
   }, [word, definition?.audio_url]);
 
   const speakWithSynthesis = (text: string) => {
-<<<<<<< Updated upstream
-    const speak = () => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.8;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-      const voice = getEnglishVoice();
-      if (voice) utterance.voice = voice;
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      speechSynthesis.speak(utterance);
-    };
-
-    const voices = speechSynthesis.getVoices();
-    if (voices.length === 0) {
-      speechSynthesis.addEventListener('voiceschanged', () => speak(), { once: true });
-    } else {
-      speak();
-=======
     const language = detectLanguage(text);
     const voice = language === 'en' ? englishVoice : portugueseVoice;
     
@@ -305,14 +284,13 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
       console.warn('⚠️ Voz não disponível para:', language);
       setIsSpeaking(false);
       return;
->>>>>>> Stashed changes
     }
     
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = language === 'en' ? 'en-US' : 'pt-PT';
     utterance.rate = 0.8;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
+    utterance.pitch = 1;
+    utterance.volume = 1;
     utterance.voice = voice;
     
     utterance.onstart = () => setIsSpeaking(true);

@@ -35,22 +35,18 @@ import {
 import { toast } from 'sonner';
 import { 
   Layers, 
-  RotateCcw, 
   Volume2, 
-  CheckCircle2, 
-  XCircle,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Loader2,
   Plus,
-  Trash2,
   Download,
   Archive,
   ArchiveRestore
 } from 'lucide-react';
 import { ImportVocabularyModal } from '@/components/ImportVocabularyModal';
 import { calculateSM2, isDueForReview, formatInterval, getQualityLabel, getQualityVariant } from '@/lib/sm2';
-import { cn } from '@/lib/utils';
 
 interface Flashcard {
   id: string;
