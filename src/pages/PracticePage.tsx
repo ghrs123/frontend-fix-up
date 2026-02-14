@@ -211,10 +211,30 @@ function TranslationExercise({ texts }: { texts: Text[] }) {
   );
 }
 
+// Writing feedback types
+interface GrammarError {
+  error: string;
+  correction: string;
+  explanation: string;
+}
+
+interface WritingFeedback {
+  score: number;
+  grammar: GrammarError[];
+  vocabulary: string;
+  structure: string;
+  positives: string[];
+  suggestions: string[];
+  corrected_text: string;
+}
+
 // Writing exercise component
 function WritingExercise() {
   const [prompt, setPrompt] = useState<{ topic: string; hints: string[] } | null>(null);
   const [userWriting, setUserWriting] = useState('');
+  const [feedback, setFeedback] = useState<WritingFeedback | null>(null);
+  const [isReviewing, setIsReviewing] = useState(false);
+  const [showCorrected, setShowCorrected] = useState(false);
 
   const prompts = [
     { topic: "Descreva a sua rotina diária em inglês", hints: ["Use presente simples", "Inclua horários", "Mencione atividades"] },
@@ -231,16 +251,47 @@ function WritingExercise() {
     const randomIndex = Math.floor(Math.random() * prompts.length);
     setPrompt(prompts[randomIndex]);
     setUserWriting('');
+    setFeedback(null);
+    setShowCorrected(false);
+  };
+
+  const getAIFeedback = async () => {
+    if (!userWriting.trim() || wordCount < 5) {
+      toast.error('Escreve pelo menos algumas palavras para receber feedback.');
+      return;
+    }
+    setIsReviewing(true);
+    setFeedback(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('review-writing', {
+        body: { text: userWriting, topic: prompt?.topic },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+      setFeedback(data);
+      toast.success('Feedback recebido!');
+    } catch (err: any) {
+      console.error('Review writing error:', err);
+      toast.error('Erro ao obter feedback. Tenta novamente.');
+    } finally {
+      setIsReviewing(false);
+    }
   };
 
   const wordCount = userWriting.trim().split(/\s+/).filter(w => w.length > 0).length;
+
+  const scoreColor = (score: number) => {
+    if (score >= 8) return 'text-green-500';
+    if (score >= 5) return 'text-yellow-500';
+    return 'text-red-500';
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h3 className="font-medium">Exercício de Escrita</h3>
-          <p className="text-sm text-muted-foreground">Pratique a sua escrita em inglês</p>
+          <p className="text-sm text-muted-foreground">Pratique a sua escrita em inglês e receba feedback da IA</p>
         </div>
         <Button onClick={getRandomPrompt}>
           <Lightbulb className="mr-2 h-4 w-4" />
@@ -249,57 +300,161 @@ function WritingExercise() {
       </div>
 
       {prompt ? (
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card className="md:col-span-1">
-            <CardHeader>
-              <CardTitle className="text-lg">Tema</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="font-medium">{prompt.topic}</p>
-              <div>
-                <p className="text-sm font-medium mb-2">Dicas:</p>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  {prompt.hints.map((hint, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary shrink-0" />
-                      {hint}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-3">
+            <Card className="md:col-span-1">
+              <CardHeader>
+                <CardTitle className="text-lg">Tema</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="font-medium">{prompt.topic}</p>
+                <div>
+                  <p className="text-sm font-medium mb-2">Dicas:</p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    {prompt.hints.map((hint, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                        {hint}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Sua Escrita</CardTitle>
-                <Badge variant="secondary">{wordCount} palavras</Badge>
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Sua Escrita</CardTitle>
+                  <Badge variant="secondary">{wordCount} palavras</Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Textarea
+                  value={userWriting}
+                  onChange={(e) => setUserWriting(e.target.value)}
+                  placeholder="Escreva aqui em inglês..."
+                  rows={12}
+                  className="resize-none"
+                />
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    onClick={() => { setUserWriting(''); setFeedback(null); setShowCorrected(false); }}
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Limpar
+                  </Button>
+                  <Button onClick={getAIFeedback} disabled={isReviewing || wordCount < 5}>
+                    {isReviewing ? (
+                      <><Sparkles className="mr-2 h-4 w-4 animate-spin" /> A analisar...</>
+                    ) : (
+                      <><Sparkles className="mr-2 h-4 w-4" /> Feedback IA</>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* AI Feedback Section */}
+          {feedback && (
+            <div className="space-y-4">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Feedback da IA
+              </h3>
+
+              {/* Score */}
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className={`text-4xl font-bold ${scoreColor(feedback.score)}`}>
+                      {feedback.score}/10
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <div className="flex gap-2 flex-wrap">
+                        {feedback.positives.map((p, i) => (
+                          <Badge key={i} variant="secondary" className="bg-green-500/10 text-green-600">
+                            ✓ {p}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Grammar Errors */}
+              {feedback.grammar.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Erros Gramaticais ({feedback.grammar.length})</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {feedback.grammar.map((g, i) => (
+                      <div key={i} className="rounded-lg border p-3 space-y-1">
+                        <div className="flex items-start gap-2">
+                          <span className="text-destructive line-through text-sm">{g.error}</span>
+                          <span className="text-primary text-sm font-medium">→ {g.correction}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{g.explanation}</p>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Vocabulary & Structure */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                  <CardHeader><CardTitle className="text-lg">Vocabulário</CardTitle></CardHeader>
+                  <CardContent><p className="text-sm text-muted-foreground">{feedback.vocabulary}</p></CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle className="text-lg">Estrutura</CardTitle></CardHeader>
+                  <CardContent><p className="text-sm text-muted-foreground">{feedback.structure}</p></CardContent>
+                </Card>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea
-                value={userWriting}
-                onChange={(e) => setUserWriting(e.target.value)}
-                placeholder="Escreva aqui em inglês..."
-                rows={12}
-                className="resize-none"
-              />
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline"
-                  onClick={() => setUserWriting('')}
-                >
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  Limpar
-                </Button>
-                <Button onClick={() => toast.success('Texto guardado! Continue praticando.')}>
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Guardar
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+
+              {/* Suggestions */}
+              {feedback.suggestions.length > 0 && (
+                <Card>
+                  <CardHeader><CardTitle className="text-lg">Sugestões de Melhoria</CardTitle></CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {feedback.suggestions.map((s, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm">
+                          <Lightbulb className="h-4 w-4 mt-0.5 text-yellow-500 shrink-0" />
+                          <span className="text-muted-foreground">{s}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Corrected Text */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Texto Corrigido</CardTitle>
+                    <Button variant="outline" size="sm" onClick={() => setShowCorrected(!showCorrected)}>
+                      {showCorrected ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                      {showCorrected ? 'Esconder' : 'Ver'}
+                    </Button>
+                  </div>
+                </CardHeader>
+                {showCorrected && (
+                  <CardContent>
+                    <p className="text-sm whitespace-pre-line text-muted-foreground leading-relaxed">
+                      {feedback.corrected_text}
+                    </p>
+                  </CardContent>
+                )}
+              </Card>
+            </div>
+          )}
         </div>
       ) : (
         <Card className="py-12">
