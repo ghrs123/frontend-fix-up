@@ -272,7 +272,7 @@ function WritingExercise() {
       if (data?.error) { toast.error(data.error); return; }
       setFeedback(data);
       toast.success('Feedback recebido!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Review writing error:', err);
       toast.error('Erro ao obter feedback. Tenta novamente.');
     } finally {

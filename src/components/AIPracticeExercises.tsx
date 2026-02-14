@@ -214,9 +214,9 @@ export function AIPracticeExercises() {
 
       setExercises(data.exercises || []);
       toast.success('Exercícios gerados com sucesso!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Generate exercises error:', err);
-      const errorMessage = err?.message || 'Erro ao gerar exercícios.';
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao gerar exercícios.';
       
       if (errorMessage.includes('fetch')) {
         toast.error('Erro de conexão. Verifica a tua internet.');

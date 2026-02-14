@@ -17,7 +17,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const { signIn, signUp, isAuthenticated } = useAuth();
+  const { signIn, signUp, isAuthenticated, signInWithGoogle, signInWithGithub } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -28,8 +28,6 @@ export default function AuthPage() {
     navigate(from, { replace: true });
     return null;
   }
-
-  const { signInWithGoogle, signInWithGithub } = useAuth();
 
   const handleGoogleSignIn = async () => {
     setIsOAuthLoading('google');
