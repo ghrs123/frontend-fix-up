@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
@@ -18,16 +18,19 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      {
-        global: {
-          headers: {
-            Authorization: authHeader,
-          },
-        },
-      }
+
+    const jwt = authHeader.replace(/^Bearer /, "").trim();
+    if (!jwt) {
+      return new Response(
+        JSON.stringify({ error: "Token JWT ausente ou inválido." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: `Bearer ${jwt}` } } }
     );
     const {
       data: { user },
@@ -42,8 +45,7 @@ serve(async (req) => {
 
     const { exerciseType = "mixed", difficulty = "beginner" } = await req.json();
 
-    // Fetch user's flashcards (RLS garante que só busca do utilizador autenticado)
-    const { data: flashcards, error: fcError } = await supabase
+    const { data: flashcards, error: fcError } = await supabaseClient
       .from("flashcards")
       .select("word, translation, definition, example_sentence")
       .eq("is_active", true)
@@ -115,16 +117,59 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
 
     const aiResponse = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-        contents: [
-          { role: "user", parts: [{ text: systemPrompt }] },
-          { role: "user", parts: [{ text: `${exercisePrompt}\n\nReturn ONLY JSON.` }] },
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "user", content: fullPrompt },
         ],
-        generationConfig: {
-          temperature: 0.7,
-          responseMimeType: "application/json",
-        },
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "return_exercises",
+              description: "Return the generated exercises",
+              parameters: {
+                type: "object",
+                properties: {
+                  exercises: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        type: { type: "string", enum: ["fill-blank", "translate", "match"] },
+                        instruction: { type: "string" },
+                        sentence: { type: "string" },
+                        answer: { type: "string" },
+                        hint: { type: "string" },
+                        options: { type: "array", items: { type: "string" } },
+                        direction: { type: "string" },
+                        pairs: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              english: { type: "string" },
+                              portuguese: { type: "string" },
+                            },
+                            required: ["english", "portuguese"],
+                          },
+                        },
+                      },
+                      required: ["type", "instruction"],
+                    },
+                  },
+                },
+                required: ["exercises"],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "return_exercises" } },
       }),
     });
 
@@ -146,15 +191,19 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
       });
     }
 
-    const text = await aiResponse.text();
-    let parsed: any;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      return new Response(
-        JSON.stringify({ error: "AI returned invalid JSON", details: text }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const aiData = await aiResponse.json();
+    
+    // Extract from tool call response
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    let exercises;
+    if (toolCall) {
+      exercises = JSON.parse(toolCall.function.arguments);
+    } else {
+      // Fallback: try content
+      const content = aiData.choices?.[0]?.message?.content;
+      if (!content) throw new Error("No content in AI response");
+      const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      exercises = JSON.parse(cleaned);
     }
 
     if (!parsed?.exercises || !Array.isArray(parsed.exercises) || parsed.exercises.length === 0) {
