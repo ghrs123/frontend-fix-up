@@ -3,49 +3,37 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
 
   try {
-    // Logging para debug de autenticação
     const authHeader = req.headers.get("Authorization");
-    console.log("Authorization header recebido:", authHeader);
-    if (!authHeader || !authHeader.trim() || !authHeader.startsWith("Bearer ")) {
-      console.error("Authorization ausente ou formato inválido");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return new Response(
         JSON.stringify({ error: "Não autenticado. Por favor, faz login novamente." }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Extrair apenas o token
     const jwt = authHeader.replace(/^Bearer /, "").trim();
-    console.log("JWT extraído:", jwt);
     if (!jwt) {
-      console.error("Token JWT ausente ou inválido após extração");
       return new Response(
         JSON.stringify({ error: "Token JWT ausente ou inválido." }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Criar cliente Supabase com Authorization correto
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: {
-          headers: { Authorization: `Bearer ${jwt}` },
-        },
-      }
+      { global: { headers: { Authorization: `Bearer ${jwt}` } } }
     );
 
     const { exerciseType = "mixed", difficulty = "beginner" } = await req.json();
 
-    // Fetch user's flashcards (RLS garante que só busca do utilizador autenticado)
     const { data: flashcards, error: fcError } = await supabaseClient
       .from("flashcards")
       .select("word, translation, definition, example_sentence")
@@ -110,20 +98,67 @@ Translate: {"type":"translate","instruction":"...","sentence":"...","answer":"..
 Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese":"..."},...]}`;
     }
 
-    // IA Gemini (Google) - Provider padrão
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
+    const fullPrompt = systemPrompt + "\n\n" + exercisePrompt + "\n\nReturn ONLY a valid JSON object with the key 'exercises' containing an array of exactly 5 exercises.";
 
-    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+    // Use Lovable AI Gateway with Gemini model
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-        contents: [{
-          parts: [{ text: systemPrompt + "\n\n" + exercisePrompt + "\n\nReturn ONLY a valid JSON object with the key 'exercises' containing an array of exactly 5 exercises." }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-        },
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "user", content: fullPrompt },
+        ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "return_exercises",
+              description: "Return the generated exercises",
+              parameters: {
+                type: "object",
+                properties: {
+                  exercises: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        type: { type: "string", enum: ["fill-blank", "translate", "match"] },
+                        instruction: { type: "string" },
+                        sentence: { type: "string" },
+                        answer: { type: "string" },
+                        hint: { type: "string" },
+                        options: { type: "array", items: { type: "string" } },
+                        direction: { type: "string" },
+                        pairs: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              english: { type: "string" },
+                              portuguese: { type: "string" },
+                            },
+                            required: ["english", "portuguese"],
+                          },
+                        },
+                      },
+                      required: ["type", "instruction"],
+                    },
+                  },
+                },
+                required: ["exercises"],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "return_exercises" } },
       }),
     });
 
@@ -146,9 +181,19 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
     }
 
     const aiData = await aiResponse.json();
-    const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!content) throw new Error("No content in response");
-    const exercises = JSON.parse(content);
+    
+    // Extract from tool call response
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    let exercises;
+    if (toolCall) {
+      exercises = JSON.parse(toolCall.function.arguments);
+    } else {
+      // Fallback: try content
+      const content = aiData.choices?.[0]?.message?.content;
+      if (!content) throw new Error("No content in AI response");
+      const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      exercises = JSON.parse(cleaned);
+    }
 
     return new Response(JSON.stringify(exercises), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
