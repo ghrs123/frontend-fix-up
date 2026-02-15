@@ -3,48 +3,43 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Autenticação necessária. Por favor, faz login." }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+    // Criar cliente Supabase com autorização do request
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: { Authorization: req.headers.get("Authorization")! },
+        },
+      }
     );
 
-    // Obter utilizador autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Token inválido ou expirado. Por favor, faz login novamente." }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
     const { exerciseType = "mixed", difficulty = "beginner" } = await req.json();
 
-    // Fetch user's flashcards
-    const { data: flashcards, error: fcError } = await supabase
+    // Fetch user's flashcards (RLS garante que só busca do utilizador autenticado)
+    const { data: flashcards, error: fcError } = await supabaseClient
       .from("flashcards")
       .select("word, translation, definition, example_sentence")
-      .eq("user_id", user.id)
       .eq("is_active", true)
       .limit(30);
 
-    if (fcError) throw fcError;
+    if (fcError) {
+      console.error("Flashcards error:", fcError);
+      if (fcError.message?.includes("JWT")) {
+        return new Response(
+          JSON.stringify({ error: "Não autenticado. Por favor, faz login novamente." }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      throw fcError;
+    }
 
     if (!flashcards || flashcards.length === 0) {
       return new Response(
