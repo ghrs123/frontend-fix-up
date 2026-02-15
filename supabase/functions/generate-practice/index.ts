@@ -11,33 +11,36 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Autenticação necessária. Por favor, faz login." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      authHeader ? { global: { headers: { Authorization: authHeader } } } : {}
+      { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Tentar obter o utilizador, mas não falhar se não estiver autenticado
-    const { data: { user } } = await supabase.auth.getUser();
+    // Obter utilizador autenticado
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     
-    const { exerciseType = "mixed", difficulty = "beginner", userId } = await req.json();
-    
-    // Usar userId do body se fornecido, caso contrário usar do token
-    const targetUserId = userId || user?.id;
-    
-    if (!targetUserId) {
+    if (authError || !user) {
       return new Response(
-        JSON.stringify({ error: "User ID is required. Please provide userId in the request body or authenticate." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Token inválido ou expirado. Por favor, faz login novamente." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    const { exerciseType = "mixed", difficulty = "beginner" } = await req.json();
 
     // Fetch user's flashcards
     const { data: flashcards, error: fcError } = await supabase
       .from("flashcards")
       .select("word, translation, definition, example_sentence")
-      .eq("user_id", targetUserId)
+      .eq("user_id", user.id)
       .eq("is_active", true)
       .limit(30);
 
