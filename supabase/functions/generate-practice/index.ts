@@ -81,88 +81,23 @@ Translate: {"type":"translate","instruction":"...","sentence":"...","answer":"..
 Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese":"..."},...]}`;
     }
 
-<<<<<<< Updated upstream
-    // Configuração de IA - Suporta múltiplas APIs
-    const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "gemini"; // openai, gemini, lovable
-    
-=======
-    // IA Gemini gratuita (Google)
+    // IA Gemini (Google) - Provider padrão
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
 
->>>>>>> Stashed changes
-    let aiResponse: Response;
-    aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ text: systemPrompt + "\n\n" + exercisePrompt + "\n\nReturn ONLY a valid JSON object with the key 'exercises' containing an array of exactly 5 exercises." }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            responseMimeType: "application/json",
-          },
-        }),
-<<<<<<< Updated upstream
-      });
-    } else {
-      // Lovable (original)
-      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-      if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
-      aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
+    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: systemPrompt + "\n\n" + exercisePrompt + "\n\nReturn ONLY a valid JSON object with the key 'exercises' containing an array of exactly 5 exercises." }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          responseMimeType: "application/json",
         },
-        body: JSON.stringify({
-          model: "google/gemini-1.5-flash", // CORRIGIDO: era "google/gemini-3-flash-preview"
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: exercisePrompt },
-          ],
-          tools: [{
-            type: "function",
-            function: {
-              name: "return_exercises",
-              description: "Return the generated exercises",
-              parameters: {
-                type: "object",
-                properties: {
-                  exercises: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        type: { type: "string", enum: ["fill-blank", "translate", "match"] },
-                        instruction: { type: "string" },
-                        sentence: { type: "string" },
-                        answer: { type: "string" },
-                        hint: { type: "string" },
-                        options: { type: "array", items: { type: "string" } },
-                        direction: { type: "string" },
-                        pairs: { type: "array", items: { type: "object", properties: { english: { type: "string" }, portuguese: { type: "string" } }, required: ["english", "portuguese"] } },
-                      },
-                      required: ["type", "instruction"],
-                    },
-                  },
-                },
-                required: ["exercises"],
-                additionalProperties: false,
-              },
-            },
-          }],
-          tool_choice: { type: "function", function: { name: "return_exercises" } },
-        }),
-      });
-    }
-=======
-      }
-    );
->>>>>>> Stashed changes
+      }),
+    });
 
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
@@ -177,7 +112,9 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
       }
       const errText = await aiResponse.text();
       console.error("AI error:", aiResponse.status, errText);
-      throw new Error("AI gateway error");
+      return new Response(JSON.stringify({ error: "Erro no serviço de IA", details: errText }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const aiData = await aiResponse.json();
