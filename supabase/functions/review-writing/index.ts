@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
 
   try {
     const { text, topic, difficulty = "beginner" } = await req.json();
@@ -18,6 +18,13 @@ serve(async (req) => {
       );
     }
 
+<<<<<<< Updated upstream
+=======
+
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
+
+>>>>>>> Stashed changes
     const systemPrompt = `You are an English writing tutor for Portuguese-speaking students (level: ${difficulty}).
 Analyze the student's English text and provide feedback IN PORTUGUESE.
 
@@ -41,6 +48,7 @@ ${text}
 
 Analyze this text and provide detailed feedback.`;
 
+<<<<<<< Updated upstream
     // Configuração de IA - Suporta múltiplas APIs
     const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "gemini"; // openai, gemini, lovable
     
@@ -50,6 +58,23 @@ Analyze this text and provide detailed feedback.`;
       // OpenAI (ChatGPT) - Recomendado
       const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
       if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not configured");
+=======
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            responseMimeType: "application/json",
+          },
+        }),
+      }
+    );
+>>>>>>> Stashed changes
 
       aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -155,6 +180,7 @@ Analyze this text and provide detailed feedback.`;
       throw new Error("AI gateway error");
     }
 
+<<<<<<< Updated upstream
     const aiData = await aiResponse.json();
     let feedback;
 
@@ -174,6 +200,12 @@ Analyze this text and provide detailed feedback.`;
       feedback = JSON.parse(toolCall.function.arguments);
     }
 
+=======
+    const aiData = await response.json();
+    const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!content) throw new Error("No content in response");
+    const feedback = JSON.parse(content);
+>>>>>>> Stashed changes
     return new Response(JSON.stringify(feedback), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

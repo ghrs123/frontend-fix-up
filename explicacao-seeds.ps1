@@ -25,7 +25,7 @@ Write-Host "  SOLUCAO: Como executar os seeds" -ForegroundColor Cyan
 Write-Host "===================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "OPCAO 1 - SQL Editor (RECOMENDADO)" -ForegroundColor Yellow
-Write-Host "  1. Abra: https://supabase.com/dashboard/project/trcnlengiehlzoxekijd/sql/new" -ForegroundColor Cyan
+Write-Host "  1. Abra: https://supabase.com/dashboard/project/tjduhugyqcaiygexpptp/sql/new" -ForegroundColor Cyan
 Write-Host "  2. Copie o conteudo do arquivo: supabase\seed.sql" -ForegroundColor White
 Write-Host "  3. Cole no SQL Editor" -ForegroundColor White
 Write-Host "  4. Clique em 'Run'" -ForegroundColor White
@@ -42,7 +42,7 @@ Write-Host "Deseja abrir a URL do SQL Editor? [S/N]" -ForegroundColor Yellow
 $response = Read-Host
 
 if ($response -eq 'S' -or $response -eq 's') {
-    Start-Process "https://supabase.com/dashboard/project/trcnlengiehlzoxekijd/sql/new"
+    Start-Process "https://supabase.com/dashboard/project/tjduhugyqcaiygexpptp/sql/new"
     Write-Host ""
     Write-Host "[OK] Navegador aberto!" -ForegroundColor Green
     Write-Host "     Agora copie o conteudo de supabase\seed.sql e cole no editor." -ForegroundColor White

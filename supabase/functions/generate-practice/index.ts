@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
 
   try {
     const authHeader = req.headers.get("Authorization");
@@ -81,38 +81,19 @@ Translate: {"type":"translate","instruction":"...","sentence":"...","answer":"..
 Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese":"..."},...]}`;
     }
 
+<<<<<<< Updated upstream
     // Configuração de IA - Suporta múltiplas APIs
     const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "gemini"; // openai, gemini, lovable
     
+=======
+    // IA Gemini gratuita (Google)
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
+
+>>>>>>> Stashed changes
     let aiResponse: Response;
-    
-    if (AI_PROVIDER === "openai") {
-      // OpenAI (ChatGPT) - Recomendado
-      const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-      if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not configured");
-
-      aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini", // ou "gpt-4o" para melhor qualidade
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: exercisePrompt + "\n\nReturn ONLY a valid JSON object with the key 'exercises' containing an array of exactly 5 exercises." },
-          ],
-          temperature: 0.7,
-          response_format: { type: "json_object" },
-        }),
-      });
-    } else if (AI_PROVIDER === "gemini") {
-      // Google Gemini - Gratuito até 15 RPM
-      const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-      if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
-
-      aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -124,6 +105,7 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
             responseMimeType: "application/json",
           },
         }),
+<<<<<<< Updated upstream
       });
     } else {
       // Lovable (original)
@@ -177,6 +159,10 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
         }),
       });
     }
+=======
+      }
+    );
+>>>>>>> Stashed changes
 
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
@@ -195,23 +181,9 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
     }
 
     const aiData = await aiResponse.json();
-    let exercises;
-
-    // Parse response baseado no provider
-    if (AI_PROVIDER === "openai") {
-      const content = aiData.choices?.[0]?.message?.content;
-      if (!content) throw new Error("No content in response");
-      exercises = JSON.parse(content);
-    } else if (AI_PROVIDER === "gemini") {
-      const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!content) throw new Error("No content in response");
-      exercises = JSON.parse(content);
-    } else {
-      // Lovable (original)
-      const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-      if (!toolCall) throw new Error("No tool call response");
-      exercises = JSON.parse(toolCall.function.arguments);
-    }
+    const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!content) throw new Error("No content in response");
+    const exercises = JSON.parse(content);
 
     return new Response(JSON.stringify(exercises), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

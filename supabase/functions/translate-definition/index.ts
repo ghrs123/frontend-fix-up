@@ -6,9 +6,19 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
 
   try {
+    // --- AUTENTICAÇÃO JWT (opcional, mas recomendada) ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized: missing or invalid Authorization header" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ...existing code...
     const { word, definition, examples } = await req.json();
     if (!word || !definition) {
       return new Response(JSON.stringify({ error: "word and definition are required" }), {
@@ -17,6 +27,12 @@ serve(async (req) => {
       });
     }
 
+<<<<<<< Updated upstream
+=======
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
+
+>>>>>>> Stashed changes
     const prompt = `Translate the following English dictionary entry to Portuguese (European/PT-PT).
 
 Word: ${word}
@@ -30,6 +46,7 @@ ${examples?.length ? '- "examples_pt": array of translated examples' : ""}
 
 Return ONLY valid JSON, no markdown.`;
 
+<<<<<<< Updated upstream
     // Configuração de IA - Suporta múltiplas APIs
     const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "gemini"; // openai, gemini, lovable
     
@@ -39,6 +56,23 @@ Return ONLY valid JSON, no markdown.`;
       // OpenAI (ChatGPT) - Recomendado
       const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
       if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not configured");
+=======
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: `You are a precise English-to-Portuguese translator. Return only valid JSON.\n\n${prompt}` }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            responseMimeType: "application/json",
+          },
+        }),
+      }
+    );
+>>>>>>> Stashed changes
 
       aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -131,6 +165,7 @@ Return ONLY valid JSON, no markdown.`;
       throw new Error("AI gateway error");
     }
 
+<<<<<<< Updated upstream
     const aiData = await aiResponse.json();
     let result;
 
@@ -150,6 +185,12 @@ Return ONLY valid JSON, no markdown.`;
       result = JSON.parse(toolCall.function.arguments);
     }
 
+=======
+    const aiData = await response.json();
+    const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!content) throw new Error("No content in response");
+    const result = JSON.parse(content);
+>>>>>>> Stashed changes
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

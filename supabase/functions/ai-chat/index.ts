@@ -6,14 +6,23 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
 
   try {
+<<<<<<< Updated upstream
     const { messages } = await req.json();
     
     const systemMessage = {
       role: "system",
       content: `You are a friendly and patient English language tutor for Portuguese-speaking students. Your role is to:
+=======
+
+    const { messages } = await req.json();
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
+
+    const systemPrompt = `You are a friendly and patient English language tutor for Portuguese-speaking students. Your role is to:
+>>>>>>> Stashed changes
 
 1. Help students practice English conversation
 2. Correct grammar and vocabulary mistakes gently
@@ -29,6 +38,7 @@ When correcting mistakes:
 - Give a similar example
 
 Keep responses concise but helpful. Mix English with Portuguese explanations when needed.
+<<<<<<< Updated upstream
 Format responses using markdown for clarity.`,
     };
 
@@ -117,6 +127,28 @@ Format responses using markdown for clarity.`,
         }),
       });
     }
+=======
+Format responses using markdown for clarity.`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: systemPrompt },
+              ...messages.map((m: any) => ({ text: m.content }))
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            responseMimeType: "text/plain",
+          },
+        }),
+      }
+    );
+>>>>>>> Stashed changes
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -133,14 +165,18 @@ Format responses using markdown for clarity.`,
       }
       const errText = await response.text();
       console.error("AI gateway error:", response.status, errText);
-      return new Response(JSON.stringify({ error: "Erro no serviço de IA" }), {
+      // Adiciona o erro detalhado na resposta para facilitar o diagnóstico
+      return new Response(JSON.stringify({ error: "Erro no serviço de IA", details: errText }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+    const aiData = await response.json();
+    const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!content) throw new Error("No content in response");
+    return new Response(content, {
+      headers: { ...corsHeaders, "Content-Type": "text/plain" },
     });
   } catch (e) {
     console.error("ai-chat error:", e);

@@ -54,7 +54,7 @@ O método anterior **NÃO FUNCIONA** porque o comando `query` não existe na Sup
    ```
    
 2. Executar no SQL Editor:
-   - Acesse: https://supabase.com/dashboard/project/trcnlengiehlzoxekijd/sql/new
+   - Acesse: https://supabase.com/dashboard/project/tjduhugyqcaiygexpptp/sql/new
    - Abra o arquivo `supabase\seed.sql` gerado
    - Copie todo o conteúdo
    - Cole no SQL Editor
