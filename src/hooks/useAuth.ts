@@ -25,6 +25,11 @@ export function useAuth() {
       });
       return { error: result?.error ?? null };
     };
+
+    const signInWithGithub = async () => {
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: window.location.origin } });
+      return { error };
+    };
   const [state, setState] = useState<AuthState>({
     user: null,
     session: null,
@@ -156,5 +161,6 @@ export function useAuth() {
     signUp,
     signOut,
     signInWithGoogle,
+    signInWithGithub,
   };
 }
