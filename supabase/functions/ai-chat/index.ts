@@ -11,6 +11,13 @@ serve(async (req) => {
   try {
     const { messages } = await req.json();
     
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Messages array is required and must not be empty" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     const systemMessage = {
       role: "system",
       content: `You are a friendly and patient English language tutor for Portuguese-speaking students. Your role is to:
