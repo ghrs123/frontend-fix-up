@@ -106,7 +106,6 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
         }],
         generationConfig: {
           temperature: 0.7,
-          responseMimeType: "application/json",
         },
       }),
     });
