@@ -31,7 +31,7 @@ ${examples?.length ? '- "examples_pt": array of translated examples' : ""}
 Return ONLY valid JSON, no markdown.`;
 
     // Configuração de IA - Suporta múltiplas APIs
-    const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "openai"; // openai, gemini, lovable
+    const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "gemini"; // openai, gemini, lovable
     
     let aiResponse: Response;
     

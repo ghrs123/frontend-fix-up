@@ -42,7 +42,7 @@ ${text}
 Analyze this text and provide detailed feedback.`;
 
     // Configuração de IA - Suporta múltiplas APIs
-    const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "openai"; // openai, gemini, lovable
+    const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "gemini"; // openai, gemini, lovable
     
     let aiResponse: Response;
     
