@@ -189,24 +189,9 @@ export function AIPracticeExercises() {
     setIsLoading(true);
     setExercises([]);
     try {
-      // Obter o JWT do usuário autenticado
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-      const jwt = session?.access_token;
-
-      if (!jwt) {
-        toast.error('Não autorizado. Faça login novamente.');
-        setIsLoading(false);
-        return;
-      }
-
+      // Não enviar headers manualmente, supabase-js faz isso automaticamente
       const { data, error } = await supabase.functions.invoke('generate-practice', {
         body: { exerciseType, difficulty },
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-        },
       });
 
       if (error) {

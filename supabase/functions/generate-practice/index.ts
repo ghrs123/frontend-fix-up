@@ -10,43 +10,40 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
 
   try {
-    // Logging para debug de autenticação
+    // Autenticação: repassar Authorization header inteiro
     const authHeader = req.headers.get("Authorization");
-    console.log("Authorization header recebido:", authHeader);
-    if (!authHeader || !authHeader.trim() || !authHeader.startsWith("Bearer ")) {
-      console.error("Authorization ausente ou formato inválido");
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: "Não autenticado. Por favor, faz login novamente." }),
+        JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Extrair apenas o token
-    const jwt = authHeader.replace(/^Bearer /, "").trim();
-    console.log("JWT extraído:", jwt);
-    if (!jwt) {
-      console.error("Token JWT ausente ou inválido após extração");
-      return new Response(
-        JSON.stringify({ error: "Token JWT ausente ou inválido." }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Criar cliente Supabase com Authorization correto
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
       {
         global: {
-          headers: { Authorization: `Bearer ${jwt}` },
+          headers: {
+            Authorization: authHeader,
+          },
         },
       }
     );
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const { exerciseType = "mixed", difficulty = "beginner" } = await req.json();
 
     // Fetch user's flashcards (RLS garante que só busca do utilizador autenticado)
-    const { data: flashcards, error: fcError } = await supabaseClient
+    const { data: flashcards, error: fcError } = await supabase
       .from("flashcards")
       .select("word, translation, definition, example_sentence")
       .eq("is_active", true)
@@ -110,19 +107,23 @@ Translate: {"type":"translate","instruction":"...","sentence":"...","answer":"..
 Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese":"..."},...]}`;
     }
 
-    // IA Gemini (Google) - Provider padrão
+    // Gemini v1beta e modelo correto
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
+    const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-flash-latest";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
-    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+    const aiResponse = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{
-          parts: [{ text: systemPrompt + "\n\n" + exercisePrompt + "\n\nReturn ONLY a valid JSON object with the key 'exercises' containing an array of exactly 5 exercises." }]
-        }],
+        contents: [
+          { role: "user", parts: [{ text: systemPrompt }] },
+          { role: "user", parts: [{ text: `${exercisePrompt}\n\nReturn ONLY JSON.` }] },
+        ],
         generationConfig: {
           temperature: 0.7,
+          responseMimeType: "application/json",
         },
       }),
     });
@@ -145,14 +146,28 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
       });
     }
 
-    const aiData = await aiResponse.json();
-    const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!content) throw new Error("No content in response");
-    const exercises = JSON.parse(content);
+    const text = await aiResponse.text();
+    let parsed: any;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "AI returned invalid JSON", details: text }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    return new Response(JSON.stringify(exercises), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    if (!parsed?.exercises || !Array.isArray(parsed.exercises) || parsed.exercises.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Nenhum exercício foi gerado.", details: parsed }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify(parsed),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (e) {
     console.error("generate-practice error:", e);
     return new Response(
