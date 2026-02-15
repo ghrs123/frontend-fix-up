@@ -11,24 +11,33 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
-
+    
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+      authHeader ? { global: { headers: { Authorization: authHeader } } } : {}
     );
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) throw new Error("Unauthorized");
-
-    const { exerciseType = "mixed", difficulty = "beginner" } = await req.json();
+    // Tentar obter o utilizador, mas não falhar se não estiver autenticado
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { exerciseType = "mixed", difficulty = "beginner", userId } = await req.json();
+    
+    // Usar userId do body se fornecido, caso contrário usar do token
+    const targetUserId = userId || user?.id;
+    
+    if (!targetUserId) {
+      return new Response(
+        JSON.stringify({ error: "User ID is required. Please provide userId in the request body or authenticate." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Fetch user's flashcards
     const { data: flashcards, error: fcError } = await supabase
       .from("flashcards")
       .select("word, translation, definition, example_sentence")
-      .eq("user_id", user.id)
+      .eq("user_id", targetUserId)
       .eq("is_active", true)
       .limit(30);
 
