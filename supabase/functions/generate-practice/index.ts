@@ -10,13 +10,35 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
 
   try {
-    // Criar cliente Supabase com autorização do request
+    // Logging para debug de autenticação
+    const authHeader = req.headers.get("Authorization");
+    console.log("Authorization header recebido:", authHeader);
+    if (!authHeader || !authHeader.trim() || !authHeader.startsWith("Bearer ")) {
+      console.error("Authorization ausente ou formato inválido");
+      return new Response(
+        JSON.stringify({ error: "Não autenticado. Por favor, faz login novamente." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Extrair apenas o token
+    const jwt = authHeader.replace(/^Bearer /, "").trim();
+    console.log("JWT extraído:", jwt);
+    if (!jwt) {
+      console.error("Token JWT ausente ou inválido após extração");
+      return new Response(
+        JSON.stringify({ error: "Token JWT ausente ou inválido." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Criar cliente Supabase com Authorization correto
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       {
         global: {
-          headers: { Authorization: req.headers.get("Authorization")! },
+          headers: { Authorization: `Bearer ${jwt}` },
         },
       }
     );
@@ -92,7 +114,7 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
 
-    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
