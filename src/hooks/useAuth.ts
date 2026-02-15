@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { lovable } from '@/integrations/lovable';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthState {
@@ -19,13 +20,10 @@ interface Profile {
 
 export function useAuth() {
     const signInWithGoogle = async () => {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
-      return { error };
-    };
-
-    const signInWithGithub = async () => {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: window.location.origin } });
-      return { error };
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      return { error: result?.error ?? null };
     };
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -158,6 +156,5 @@ export function useAuth() {
     signUp,
     signOut,
     signInWithGoogle,
-    signInWithGithub,
   };
 }
