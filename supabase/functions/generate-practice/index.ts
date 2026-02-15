@@ -82,7 +82,7 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
     }
 
     // Configuração de IA - Suporta múltiplas APIs
-    const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "lovable"; // openai, gemini, lovable
+    const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "openai"; // openai, gemini, lovable
     
     let aiResponse: Response;
     
@@ -137,7 +137,7 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-1.5-flash", // CORRIGIDO: era "google/gemini-3-flash-preview"
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: exercisePrompt },
