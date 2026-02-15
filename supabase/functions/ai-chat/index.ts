@@ -9,20 +9,11 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
 
   try {
-<<<<<<< Updated upstream
     const { messages } = await req.json();
     
     const systemMessage = {
       role: "system",
       content: `You are a friendly and patient English language tutor for Portuguese-speaking students. Your role is to:
-=======
-
-    const { messages } = await req.json();
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
-
-    const systemPrompt = `You are a friendly and patient English language tutor for Portuguese-speaking students. Your role is to:
->>>>>>> Stashed changes
 
 1. Help students practice English conversation
 2. Correct grammar and vocabulary mistakes gently
@@ -38,35 +29,58 @@ When correcting mistakes:
 - Give a similar example
 
 Keep responses concise but helpful. Mix English with Portuguese explanations when needed.
-<<<<<<< Updated upstream
 Format responses using markdown for clarity.`,
     };
 
     // Configuração de IA - Suporta múltiplas APIs
     const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "gemini"; // openai, gemini, lovable
     
-    let response: Response;
-    
     if (AI_PROVIDER === "openai") {
-      // OpenAI (ChatGPT) - Recomendado para streaming
+      // OpenAI (ChatGPT) - Streaming nativo
       const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
       if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not configured");
 
-      response = await fetch("https://api.openai.com/v1/chat/completions", {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini", // ou "gpt-4o" para melhor qualidade
+          model: "gpt-4o-mini",
           messages: [systemMessage, ...messages],
           temperature: 0.7,
           stream: true,
         }),
       });
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ error: "Limite de pedidos excedido. Tenta novamente em breve." }), {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (response.status === 402) {
+          return new Response(JSON.stringify({ error: "Créditos AI esgotados." }), {
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const errText = await response.text();
+        console.error("OpenAI error:", response.status, errText);
+        return new Response(JSON.stringify({ error: "Erro no serviço de IA", details: errText }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(response.body, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
+
     } else if (AI_PROVIDER === "gemini") {
-      // Google Gemini - Streaming não suportado da mesma forma
+      // Google Gemini - Conversão para SSE
       const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
       if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
 
@@ -88,9 +102,18 @@ Format responses using markdown for clarity.`,
       });
 
       if (!geminiResponse.ok) {
+        if (geminiResponse.status === 429) {
+          return new Response(JSON.stringify({ error: "Limite de pedidos excedido. Tenta novamente em breve." }), {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
         const errText = await geminiResponse.text();
         console.error("Gemini error:", geminiResponse.status, errText);
-        throw new Error("Gemini API error");
+        return new Response(JSON.stringify({ error: "Erro no serviço de IA", details: errText }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       const geminiData = await geminiResponse.json();
@@ -109,75 +132,51 @@ Format responses using markdown for clarity.`,
       return new Response(stream, {
         headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
       });
+
     } else {
-      // Lovable (original) - MODELO CORRIGIDO
+      // Lovable (original) - Streaming nativo
       const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
       if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${LOVABLE_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-1.5-flash", // CORRIGIDO: era "google/gemini-3-flash-preview"
+          model: "google/gemini-1.5-flash",
           messages: [systemMessage, ...messages],
           stream: true,
         }),
       });
-    }
-=======
-Format responses using markdown for clarity.`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: systemPrompt },
-              ...messages.map((m: any) => ({ text: m.content }))
-            ]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            responseMimeType: "text/plain",
-          },
-        }),
-      }
-    );
->>>>>>> Stashed changes
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de pedidos excedido. Tenta novamente em breve." }), {
-          status: 429,
+      if (!response.ok) {
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ error: "Limite de pedidos excedido. Tenta novamente em breve." }), {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (response.status === 402) {
+          return new Response(JSON.stringify({ error: "Créditos AI esgotados. Adiciona créditos na tua conta." }), {
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const errText = await response.text();
+        console.error("Lovable error:", response.status, errText);
+        return new Response(JSON.stringify({ error: "Erro no serviço de IA", details: errText }), {
+          status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos AI esgotados. Adiciona créditos na tua conta." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errText = await response.text();
-      console.error("AI gateway error:", response.status, errText);
-      // Adiciona o erro detalhado na resposta para facilitar o diagnóstico
-      return new Response(JSON.stringify({ error: "Erro no serviço de IA", details: errText }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+      return new Response(response.body, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
       });
     }
 
-    const aiData = await response.json();
-    const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!content) throw new Error("No content in response");
-    return new Response(content, {
-      headers: { ...corsHeaders, "Content-Type": "text/plain" },
-    });
   } catch (e) {
     console.error("ai-chat error:", e);
     return new Response(
