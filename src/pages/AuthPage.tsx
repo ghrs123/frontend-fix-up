@@ -29,7 +29,7 @@ export default function AuthPage() {
     return null;
   }
 
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, signInWithGithub } = useAuth();
 
   const handleGoogleSignIn = async () => {
     setIsOAuthLoading('google');
@@ -40,6 +40,20 @@ export default function AuthPage() {
       }
     } catch (error) {
       toast.error('Erro ao entrar com Google');
+    } finally {
+      setIsOAuthLoading(null);
+    }
+  };
+
+  const handleGithubSignIn = async () => {
+    setIsOAuthLoading('github');
+    try {
+      const { error } = await signInWithGithub();
+      if (error) {
+        toast.error(`Erro ao entrar com GitHub: ${error.message}`);
+      }
+    } catch (error) {
+      toast.error('Erro ao entrar com GitHub');
     } finally {
       setIsOAuthLoading(null);
     }
@@ -143,6 +157,26 @@ export default function AuthPage() {
                   </svg>
                 )}
                 Continuar com Google
+              </Button>
+
+              {/* OAuth Button - GitHub */}
+              <Button
+                variant="outline"
+                onClick={handleGithubSignIn}
+                disabled={isOAuthLoading === 'github'}
+                className="w-full mt-2"
+              >
+                {isOAuthLoading === 'github' ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                    <path
+                      fill="currentColor"
+                      d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.5.5.09.66-.22.66-.47 0-.23-.01-.85-.01-1.67-2.78.6-3.37-1.34-3.37-1.34-.45-1.15-1.11-1.46-1.11-1.46-.91-.62.07-.61.07-.61 1.01.07 1.54 1.04 1.54 1.04.89 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.56-1.11-4.56-4.95 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02A9.56 9.56 0 0 1 12 6.8c.85.004 1.71.115 2.51.337 1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.85-2.34 4.7-4.57 4.95.36.31.68.92.68 1.85 0 1.34-.01 2.42-.01 2.75 0 .26.16.57.67.47A10.01 10.01 0 0 0 22 12c0-5.52-4.48-10-10-10z"
+                    />
+                  </svg>
+                )}
+                Continuar com GitHub
               </Button>
 
               <div className="relative">
