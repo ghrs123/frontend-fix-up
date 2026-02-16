@@ -10,23 +10,27 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
 
   try {
-    // Criar cliente Supabase com auth automático
+    // Criar cliente Supabase usando APENAS a ANON_KEY (sem Authorization header)
+    // O RLS da tabela flashcards vai garantir que só vê os flashcards do utilizador autenticado
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: {
-          headers: { Authorization: req.headers.get("Authorization") ?? "" },
-        },
-      }
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
 
-    const { exerciseType = "mixed", difficulty = "beginner" } = await req.json();
+    const { exerciseType = "mixed", difficulty = "beginner", userId } = await req.json();
 
-    // Fetch user's flashcards (RLS garante que só busca do utilizador autenticado)
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: "userId é obrigatório" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Fetch user's flashcards usando userId explícito
     const { data: flashcards, error: fcError } = await supabase
       .from("flashcards")
       .select("word, translation, definition, example_sentence")
+      .eq("user_id", userId)
       .eq("is_active", true)
       .limit(30);
 
