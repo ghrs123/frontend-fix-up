@@ -99,6 +99,25 @@ VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
 ```
 
+## ✅ CI/CD (GitHub Actions + Pages)
+
+Este repositório inclui CI/CD com GitHub Actions em [.github/workflows/ci.yml](.github/workflows/ci.yml):
+
+- **CI** em PRs e pushes para `main`: `lint`, `test` e `build`.
+- **CD** (deploy) para **GitHub Pages** em pushes para `main`.
+
+### Configurar variáveis para o build do Pages
+
+No GitHub, vai a **Settings → Secrets and variables → Actions → Variables** e adiciona:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- (opcional) `VITE_SUPABASE_PROJECT_ID`
+
+### Ativar o GitHub Pages
+
+No GitHub, vai a **Settings → Pages** e em **Build and deployment** escolhe **Source: GitHub Actions**.
+
 ### Popular a Base de Dados
 
 Execute os ficheiros de seed em ordem:
