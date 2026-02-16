@@ -10,21 +10,35 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
 
   try {
-    // Criar cliente Supabase usando APENAS a ANON_KEY (sem Authorization header)
-    // O RLS da tabela flashcards vai garantir que só vê os flashcards do utilizador autenticado
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
-
-    const { exerciseType = "mixed", difficulty = "beginner", userId } = await req.json();
-
-    if (!userId) {
-      return new Response(
-        JSON.stringify({ error: "userId é obrigatório" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const authorization = req.headers.get("authorization") ?? req.headers.get("Authorization");
+    if (!authorization) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error("SUPABASE_URL / SUPABASE_ANON_KEY is not configured");
+    }
+
+    // Cliente Supabase com contexto de utilizador (JWT), para respeitar RLS
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authorization } },
+    });
+
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { exerciseType = "mixed", difficulty = "beginner" } = await req.json();
+    const userId = userData.user.id;
 
     // Fetch user's flashcards usando userId explícito
     const { data: flashcards, error: fcError } = await supabase

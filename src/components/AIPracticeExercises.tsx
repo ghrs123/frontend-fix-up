@@ -185,23 +185,47 @@ export function AIPracticeExercises() {
   const [isLoading, setIsLoading] = useState(false);
   const [exerciseType, setExerciseType] = useState<ExerciseType>('mixed');
   const [difficulty, setDifficulty] = useState<Difficulty>('beginner');
-  const { user } = useAuth();
+  const { user, session, isLoading: authLoading } = useAuth();
 
   const generateExercises = async () => {
+    if (authLoading) {
+      toast.error('A autenticação ainda está a carregar. Tenta novamente em 1-2s.');
+      return;
+    }
+    if (!session?.access_token || !user?.id) {
+      toast.error('Não autorizado. Faz login novamente.');
+      return;
+    }
+
     setIsLoading(true);
     setExercises([]);
     try {
-      // Não enviar headers manualmente, supabase-js faz isso automaticamente
       const { data, error } = await supabase.functions.invoke('generate-practice', {
-        body: { 
-          exerciseType, 
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: {
+          exerciseType,
           difficulty,
-          userId: user?.id 
+          userId: user.id,
         },
       });
 
       if (error) {
         console.error('Function invocation error:', error);
+        const status = (error as any)?.context?.status;
+        if (status === 401) {
+          toast.error('Não autorizado. Faz login novamente.');
+          return;
+        }
+        if (status === 403) {
+          toast.error('Sem permissões para gerar exercícios.');
+          return;
+        }
+        if (status === 404) {
+          toast.error('A função de IA não foi encontrada.');
+          return;
+        }
         if (error.message?.includes('FunctionsRelayError') || error.message?.includes('not found')) {
           toast.error('A função de IA não está configurada. Por favor, contacte o administrador.');
           return;
@@ -223,11 +247,12 @@ export function AIPracticeExercises() {
       toast.success('Exercícios gerados com sucesso!');
     } catch (err: any) {
       console.error('Generate exercises error:', err);
+      const status = err?.context?.status;
       const errorMessage = err?.message || 'Erro ao gerar exercícios.';
       
       if (errorMessage.includes('fetch')) {
         toast.error('Erro de conexão. Verifica a tua internet.');
-      } else if (errorMessage.includes('Unauthorized')) {
+      } else if (status === 401 || errorMessage.includes('Unauthorized')) {
         toast.error('Não autorizado. Faz login novamente.');
       } else {
         toast.error('Erro ao gerar exercícios. Tenta novamente mais tarde.');

@@ -12,3 +12,6 @@ verify_jwt = false
 
 [functions.review-writing]
 verify_jwt = false
+
+[functions.generate-practice]
+verify_jwt = false
