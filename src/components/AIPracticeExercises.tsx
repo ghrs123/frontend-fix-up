@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -184,6 +185,7 @@ export function AIPracticeExercises() {
   const [isLoading, setIsLoading] = useState(false);
   const [exerciseType, setExerciseType] = useState<ExerciseType>('mixed');
   const [difficulty, setDifficulty] = useState<Difficulty>('beginner');
+  const { user } = useAuth();
 
   const generateExercises = async () => {
     setIsLoading(true);
@@ -191,7 +193,11 @@ export function AIPracticeExercises() {
     try {
       // Não enviar headers manualmente, supabase-js faz isso automaticamente
       const { data, error } = await supabase.functions.invoke('generate-practice', {
-        body: { exerciseType, difficulty },
+        body: { 
+          exerciseType, 
+          difficulty,
+          userId: user?.id 
+        },
       });
 
       if (error) {
