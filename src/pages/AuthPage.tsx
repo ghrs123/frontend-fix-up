@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { lovable } from '@/integrations/lovable';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +16,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const { signIn, signUp, isAuthenticated } = useAuth();
+  const { signIn, signUp, isAuthenticated, signInWithGoogle, signInWithGithub } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -29,13 +28,16 @@ export default function AuthPage() {
     return null;
   }
 
-  const { signInWithGoogle, signInWithGithub } = useAuth();
-
   const handleGoogleSignIn = async () => {
     setIsOAuthLoading('google');
     try {
       const { error } = await signInWithGoogle();
       if (error) {
+        if (error.message?.includes('missing OAuth secret')) {
+          toast.error('Google login não configurado no Supabase (Client Secret em falta).');
+          console.error('[auth] missing OAuth secret - verifique Authentication → Providers → Google no projeto:', import.meta.env.VITE_SUPABASE_URL);
+          return;
+        }
         toast.error(`Erro ao entrar com Google: ${error.message}`);
       }
     } catch (error) {
@@ -50,6 +52,11 @@ export default function AuthPage() {
     try {
       const { error } = await signInWithGithub();
       if (error) {
+        if (error.message?.includes('missing OAuth secret')) {
+          toast.error('GitHub login não configurado no Supabase (Client Secret em falta).');
+          console.error('[auth] missing OAuth secret - verifique Authentication → Providers → GitHub no projeto:', import.meta.env.VITE_SUPABASE_URL);
+          return;
+        }
         toast.error(`Erro ao entrar com GitHub: ${error.message}`);
       }
     } catch (error) {

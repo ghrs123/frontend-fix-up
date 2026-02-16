@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { lovable } from '@/integrations/lovable';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthState {
@@ -19,16 +18,23 @@ interface Profile {
 }
 
 export function useAuth() {
+    const redirectTo = globalThis.location?.origin;
+
     const signInWithGoogle = async () => {
+      console.log('[auth] signInWithGoogle using', import.meta.env.VITE_SUPABASE_URL);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin }
+        options: { redirectTo },
       });
       return { error };
     };
 
     const signInWithGithub = async () => {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: window.location.origin } });
+      console.log('[auth] signInWithGithub using', import.meta.env.VITE_SUPABASE_URL);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: { redirectTo },
+      });
       return { error };
     };
   const [state, setState] = useState<AuthState>({
@@ -137,7 +143,7 @@ export function useAuth() {
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: globalThis.location?.origin,
         data: {
           display_name: displayName
         }
