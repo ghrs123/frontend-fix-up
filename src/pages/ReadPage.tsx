@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { ArrowLeft, Eye, EyeOff, Volume2, Loader2, Square } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Volume2, Square } from 'lucide-react';
 
 type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
 
