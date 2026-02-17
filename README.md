@@ -104,7 +104,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
 Este repositório está configurado para proteger a branch `main` e garantir que apenas o proprietário (@ghrs123) possa aprovar mudanças. Consulte [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md) para instruções detalhadas de configuração.
 
 **Características de proteção:**
-- ✅ Arquivo CODEOWNERS definindo @ghrs123 como revisor obrigatório
+- ✅ Arquivo CODEOWNERS definindo @ghrs123 como proprietário do código (code owner) e revisor obrigatório
 - ✅ Workflow de validação de branch protection
 - ✅ Documentação completa de configuração
 

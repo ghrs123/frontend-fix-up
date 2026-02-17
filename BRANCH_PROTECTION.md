@@ -40,7 +40,9 @@ Marque as seguintes opções:
 ✅ **Require status checks to pass before merging**
    - Se você tiver CI/CD configurado, isso garante que os testes passem
    - ✅ Marque: "Require branches to be up to date before merging"
-   - Adicione o check: `test` (do workflow CI)
+   - Adicione os checks necessários:
+     - `test` (do workflow CI - .github/workflows/ci.yml)
+     - `validate` (do workflow Branch Protection - .github/workflows/branch-protection.yml)
 
 ✅ **Require conversation resolution before merging**
    - Garante que todos os comentários foram resolvidos

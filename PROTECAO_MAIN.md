@@ -27,7 +27,9 @@ Acesse: https://github.com/ghrs123/frontend-fix-up/settings/branches
 3. Marque:
    - ✅ Require a pull request before merging
    - ✅ Require approvals (1 aprovação)
-   - ✅ Require status checks to pass (adicione: `validate`, `test`)
+   - ✅ Require status checks to pass
+     - Adicione o check: `test` (do CI workflow)
+     - Adicione o check: `validate` (do Branch Protection workflow)
    - ✅ Include administrators
 4. Salve a configuração
 
