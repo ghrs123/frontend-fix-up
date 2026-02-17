@@ -85,7 +85,7 @@ Depois de configurar, você terá:
 ## 📚 Documentação
 
 - Guia completo: [.github/BRANCH_PROTECTION.md](.github/BRANCH_PROTECTION.md)
-- Seção no README: [README.md](./README.md#-proteção-da-branch-main)
+- Seção no README: [README.md#proteção-da-branch-main](./README.md#-proteção-da-branch-main)
 - GitHub Docs: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches
 
 ## 🤝 Contribuindo

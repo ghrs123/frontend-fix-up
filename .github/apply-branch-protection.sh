@@ -2,7 +2,10 @@
 # Script para aplicar proteção à branch main usando GitHub CLI
 # Requer: gh (GitHub CLI) instalado e autenticado
 #
-# Uso: ./apply-branch-protection.sh
+# Nota: Este script já possui permissões de execução (+x)
+# Se necessário, adicione permissões: chmod +x .github/apply-branch-protection.sh
+#
+# Uso: .github/apply-branch-protection.sh
 
 set -e
 

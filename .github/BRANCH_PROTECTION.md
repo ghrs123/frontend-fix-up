@@ -98,6 +98,21 @@ O repositório já tem um workflow CI configurado em `.github/workflows/ci.yml` 
 Foi criado um arquivo `.github/CODEOWNERS` que define revisores automáticos.
 Quando configurado com branch protection, garante que o code owner aprove mudanças.
 
+## 🤖 Usando o Script Automático
+
+O script `.github/apply-branch-protection.sh` já possui permissões de execução (+x).
+Se necessário, você pode adicionar permissões com:
+
+```bash
+chmod +x .github/apply-branch-protection.sh
+```
+
+Então execute:
+
+```bash
+.github/apply-branch-protection.sh
+```
+
 ## 🔗 Recursos
 
 - [GitHub Branch Protection Rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)
