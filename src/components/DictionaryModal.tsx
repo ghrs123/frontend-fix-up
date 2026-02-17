@@ -245,8 +245,9 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
       toast.success('Palavra adicionada aos flashcards!');
       queryClient.invalidateQueries({ queryKey: ['flashcards'] });
     },
-onError: (error: Error) => {
-        if (error.message?.includes('duplicate')) {
+onError: (error: unknown) => {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes('duplicate')) {
         toast.error('Esta palavra já está nos seus flashcards.');
       } else {
         toast.error('Erro ao adicionar palavra.');
