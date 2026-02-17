@@ -145,7 +145,7 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
           definition: definitionData?.definition || null,
           translation: null,
           phonetic: entry?.phonetic || entry?.phonetics?.[0]?.text || null,
-          audio_url: entry?.phonetics?.find((p: any) => p.audio)?.audio || null,
+          audio_url: entry?.phonetics?.find((p: { audio?: string }) => p.audio)?.audio || null,
           part_of_speech: meaning?.partOfSpeech || null,
           examples: definitionData?.example ? [definitionData.example] : [],
         };
@@ -245,8 +245,8 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
       toast.success('Palavra adicionada aos flashcards!');
       queryClient.invalidateQueries({ queryKey: ['flashcards'] });
     },
-    onError: (error: any) => {
-      if (error.message?.includes('duplicate')) {
+onError: (error: Error) => {
+        if (error.message?.includes('duplicate')) {
         toast.error('Esta palavra já está nos seus flashcards.');
       } else {
         toast.error('Erro ao adicionar palavra.');
@@ -254,29 +254,7 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
     },
   });
 
-  const speakWord = useCallback(() => {
-    if (!word) return;
-    speechSynthesis.cancel();
-
-    if (definition?.audio_url) {
-      const audio = new Audio(definition.audio_url);
-      audio.playbackRate = 0.9;
-      setIsSpeaking(true);
-      audio.onended = () => setIsSpeaking(false);
-      audio.onerror = () => {
-        setIsSpeaking(false);
-        speakWithSynthesis(word);
-      };
-      audio.play().catch(() => {
-        setIsSpeaking(false);
-        speakWithSynthesis(word);
-      });
-    } else {
-      speakWithSynthesis(word);
-    }
-  }, [word, definition?.audio_url]);
-
-  const speakWithSynthesis = (text: string) => {
+  const speakWithSynthesis = useCallback((text: string) => {
     const language = detectLanguage(text);
     const voice = language === 'en' ? englishVoice : portugueseVoice;
     
@@ -298,7 +276,29 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
     utterance.onerror = () => setIsSpeaking(false);
     
     speechSynthesis.speak(utterance);
-  };
+  }, [englishVoice, portugueseVoice]);
+
+  const speakWord = useCallback(() => {
+    if (!word) return;
+    speechSynthesis.cancel();
+
+    if (definition?.audio_url) {
+      const audio = new Audio(definition.audio_url);
+      audio.playbackRate = 0.9;
+      setIsSpeaking(true);
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        speakWithSynthesis(word);
+      };
+      audio.play().catch(() => {
+        setIsSpeaking(false);
+        speakWithSynthesis(word);
+      });
+    } else {
+      speakWithSynthesis(word);
+    }
+  }, [word, definition?.audio_url, speakWithSynthesis]);
 
   if (!word) return null;
 

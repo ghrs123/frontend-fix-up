@@ -97,7 +97,7 @@ Format responses using markdown for clarity.`,
         body: JSON.stringify({
           contents: [
             { parts: [{ text: systemMessage.content }] },
-            ...messages.map((msg: any) => ({
+            ...messages.map((msg: { role: string; content: string }) => ({
               role: msg.role === "assistant" ? "model" : "user",
               parts: [{ text: msg.content }]
             }))

@@ -142,15 +142,15 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
     const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
     
     // Parse JSON response
-    let parsed: any;
+    let parsed: { exercises?: unknown[] };
     try {
       // Try direct parse
-      parsed = JSON.parse(rawText);
+      parsed = JSON.parse(rawText) as { exercises?: unknown[] };
     } catch {
       // Try cleaning markdown code blocks
       const cleaned = rawText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       try {
-        parsed = JSON.parse(cleaned);
+        parsed = JSON.parse(cleaned) as { exercises?: unknown[] };
       } catch {
         return new Response(
           JSON.stringify({ error: "AI returned invalid JSON", details: rawText }),

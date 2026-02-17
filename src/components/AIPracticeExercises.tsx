@@ -213,7 +213,7 @@ export function AIPracticeExercises() {
 
       if (error) {
         console.error('Function invocation error:', error);
-        const status = (error as any)?.context?.status;
+        const status = (error as { context?: { status?: number } })?.context?.status;
         if (status === 401) {
           toast.error('Não autorizado. Faz login novamente.');
           return;
@@ -245,10 +245,10 @@ export function AIPracticeExercises() {
 
       setExercises(data.exercises || []);
       toast.success('Exercícios gerados com sucesso!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Generate exercises error:', err);
-      const status = err?.context?.status;
-      const errorMessage = err?.message || 'Erro ao gerar exercícios.';
+      const status = (err as { context?: { status?: number } })?.context?.status;
+      const errorMessage = (err instanceof Error ? err.message : String(err)) || 'Erro ao gerar exercícios.';
       
       if (errorMessage.includes('fetch')) {
         toast.error('Erro de conexão. Verifica a tua internet.');

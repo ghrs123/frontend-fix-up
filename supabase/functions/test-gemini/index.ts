@@ -9,7 +9,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
 
   try {
-    const diagnostics: any = {
+    const diagnostics: Record<string, unknown> = {
       timestamp: new Date().toISOString(),
       env_check: {},
       api_test: {},
@@ -55,11 +55,11 @@ serve(async (req) => {
           diagnostics.api_test.error = errorText;
           diagnostics.api_test.success = false;
         }
-      } catch (apiError: any) {
+      } catch (apiError: unknown) {
         diagnostics.api_test = {
           success: false,
-          error: apiError.message,
-          stack: apiError.stack,
+          error: apiError instanceof Error ? apiError.message : String(apiError),
+          stack: apiError instanceof Error ? apiError.stack : undefined,
         };
       }
     } else {
@@ -79,11 +79,11 @@ serve(async (req) => {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     return new Response(
       JSON.stringify({
-        error: e.message,
-        stack: e.stack,
+        error: e instanceof Error ? e.message : String(e),
+        stack: e instanceof Error ? e.stack : undefined,
       }, null, 2),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
