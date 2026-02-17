@@ -103,20 +103,35 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
 
 Este repositório inclui CI/CD com GitHub Actions em [.github/workflows/ci.yml](.github/workflows/ci.yml):
 
-- **CI** em PRs e pushes para `main`: `lint`, `test` e `build`.
+- **CI** em PRs e pushes para `main`: typecheck, lint, test e build.
 - **CD** (deploy) para **GitHub Pages** em pushes para `main`.
 
-### Configurar variáveis para o build do Pages
+### Passo a passo: ativar no GitHub e publicar no Pages
 
-No GitHub, vai a **Settings → Secrets and variables → Actions → Variables** e adiciona:
+1. **Envia o código para o GitHub**  
+   Faz push do repositório (com a pasta `.github/workflows/`) para o GitHub. O workflow é ativado automaticamente quando existir no repositório.
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`
-- (opcional) `VITE_SUPABASE_PROJECT_ID`
+2. **Configurar variáveis para o build**  
+   No repositório: **Settings** → **Secrets and variables** → **Actions** → separador **Variables** → **New repository variable**.  
+   Adiciona:
+   - `VITE_SUPABASE_URL` = URL do teu projeto Supabase
+   - `VITE_SUPABASE_PUBLISHABLE_KEY` = chave anon/public do Supabase
+   - (opcional) `VITE_SUPABASE_PROJECT_ID`
 
-### Ativar o GitHub Pages
+3. **Ativar o GitHub Pages**  
+   **Settings** → **Pages** → em **Build and deployment**, em **Source** escolhe **GitHub Actions**.
 
-No GitHub, vai a **Settings → Pages** e em **Build and deployment** escolhe **Source: GitHub Actions**.
+4. **Publicar**  
+   Faz push para a branch `main`. O workflow corre sozinho: se o CI passar, o job "Deploy to GitHub Pages" publica o site.  
+   O URL será: `https://<teu-username>.github.io/<nome-do-repositorio>/`
+
+### Resumo
+
+| Onde | O que fazer |
+|------|-------------|
+| **Settings → Pages** | Source = **GitHub Actions** |
+| **Settings → Actions → Variables** | Criar `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` |
+| **Push para `main`** | Dispara o CI e, se passar, o deploy para Pages |
 
 ### Popular a Base de Dados
 
