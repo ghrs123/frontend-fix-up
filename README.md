@@ -133,6 +133,27 @@ Este repositório inclui CI/CD com GitHub Actions em [.github/workflows/ci.yml](
 | **Settings → Actions → Variables** | Criar `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` |
 | **Push para `main`** | Dispara o CI e, se passar, o deploy para Pages |
 
+## 🔒 Proteção da Branch Main
+
+Para manter a qualidade e segurança do código, a branch `main` deve ser protegida. Consulte o guia completo em [.github/BRANCH_PROTECTION.md](.github/BRANCH_PROTECTION.md).
+
+### Configuração Rápida
+
+1. **Acesse**: Settings → Branches → Add branch protection rule
+2. **Configure**: 
+   - ✅ Require pull request before merging (1 approval)
+   - ✅ Require status checks (CI deve passar)
+   - ✅ Require conversation resolution
+   - ❌ Disable force pushes and deletions
+
+3. **Usando o script**:
+   ```bash
+   # Requer GitHub CLI (gh) instalado e autenticado
+   .github/apply-branch-protection.sh
+   ```
+
+Ver documentação completa: [BRANCH_PROTECTION.md](.github/BRANCH_PROTECTION.md)
+
 ### Popular a Base de Dados
 
 Execute os ficheiros de seed em ordem:

@@ -1,0 +1,18 @@
+# Code Owners para o repositório
+# Este arquivo define quem deve revisar Pull Requests automaticamente
+# Documentação: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Padrão: O proprietário do repositório revisa tudo
+* @ghrs123
+
+# Workflows e configurações do GitHub Actions
+/.github/ @ghrs123
+
+# Configurações do Supabase
+/supabase/ @ghrs123
+
+# Dependências e configuração do projeto
+/package.json @ghrs123
+/package-lock.json @ghrs123
+/pnpm-lock.yaml @ghrs123
+/bun.lockb @ghrs123
