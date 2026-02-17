@@ -99,12 +99,28 @@ VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
 ```
 
+## 🔒 Proteção da Branch Main
+
+Este repositório está configurado para proteger a branch `main` e garantir que apenas o proprietário (@ghrs123) possa aprovar mudanças. Consulte [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md) para instruções detalhadas de configuração.
+
+**Características de proteção:**
+- ✅ Arquivo CODEOWNERS definindo @ghrs123 como revisor obrigatório
+- ✅ Workflow de validação de branch protection
+- ✅ Documentação completa de configuração
+
+**Workflow recomendado:**
+1. Criar uma branch para cada feature/fix: `git checkout -b feature/minha-feature`
+2. Fazer commits na branch e push: `git push origin feature/minha-feature`
+3. Criar Pull Request no GitHub
+4. Aguardar aprovação e merge
+
 ## ✅ CI/CD (GitHub Actions + Pages)
 
-Este repositório inclui CI/CD com GitHub Actions em [.github/workflows/ci.yml](.github/workflows/ci.yml):
+Este repositório inclui CI/CD com GitHub Actions:
 
-- **CI** em PRs e pushes para `main`: typecheck, lint, test e build.
-- **CD** (deploy) para **GitHub Pages** em pushes para `main`.
+- **CI** ([.github/workflows/ci.yml](.github/workflows/ci.yml)): typecheck, lint, test e build em PRs e pushes para `main`
+- **Branch Protection** ([.github/workflows/branch-protection.yml](.github/workflows/branch-protection.yml)): validação de regras de proteção da branch
+- **CD** (deploy) para **GitHub Pages** em pushes para `main`
 
 ### Passo a passo: ativar no GitHub e publicar no Pages
 

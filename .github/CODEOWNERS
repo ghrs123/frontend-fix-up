@@ -1,0 +1,15 @@
+# CODEOWNERS file
+# This file defines the code owners for this repository.
+# Code owners are automatically requested for review when someone opens a pull request
+# that modifies code that they own.
+
+# Global owner - all files in the repository
+* @ghrs123
+
+# Main branch protection - requires approval from the owner
+# All changes to critical configuration files require explicit approval
+/.github/ @ghrs123
+/package.json @ghrs123
+/package-lock.json @ghrs123
+/tsconfig.json @ghrs123
+/vite.config.ts @ghrs123

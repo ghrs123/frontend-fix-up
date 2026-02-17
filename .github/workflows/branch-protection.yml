@@ -1,0 +1,101 @@
+name: Branch Protection
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: Validate Branch Protection Rules
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if PR is from main branch
+        if: github.event_name == 'pull_request'
+        run: |
+          SOURCE_BRANCH="${{ github.head_ref }}"
+          if [ "$SOURCE_BRANCH" = "main" ]; then
+            echo "❌ ERROR: Pull requests from 'main' branch are not allowed!"
+            echo "Please create a feature branch instead."
+            echo ""
+            echo "Example:"
+            echo "  git checkout -b feature/my-feature"
+            echo "  git push origin feature/my-feature"
+            exit 1
+          fi
+          echo "✅ Source branch '$SOURCE_BRANCH' is valid"
+
+      - name: Check for direct push to main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "⚠️  WARNING: Direct push to main branch detected!"
+          echo "This should only happen through approved Pull Requests."
+          echo ""
+          echo "If you're seeing this, please ensure branch protection is enabled:"
+          echo "1. Go to Settings → Branches"
+          echo "2. Add a rule for 'main' branch"
+          echo "3. Enable 'Require a pull request before merging'"
+          echo "4. Enable 'Require status checks to pass before merging'"
+          echo ""
+          # Don't fail on main push as this might be initial setup or merge
+          # But log the warning for awareness
+
+      - name: Validate PR title format (optional)
+        if: github.event_name == 'pull_request'
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $PR_TITLE"
+          
+          # This is optional - uncomment to enforce PR title format
+          # if ! echo "$PR_TITLE" | grep -qE "^(feat|fix|docs|style|refactor|test|chore|perf): "; then
+          #   echo "❌ ERROR: PR title must start with a type prefix"
+          #   echo "Valid prefixes: feat, fix, docs, style, refactor, test, chore, perf"
+          #   echo "Example: 'feat: add new feature' or 'fix: correct bug'"
+          #   exit 1
+          # fi
+          
+          echo "✅ PR title format is acceptable"
+
+      - name: Check for required files
+        run: |
+          echo "Checking for important protection files..."
+          
+          if [ ! -f ".github/CODEOWNERS" ]; then
+            echo "⚠️  WARNING: CODEOWNERS file not found"
+          else
+            echo "✅ CODEOWNERS file exists"
+          fi
+          
+          if [ ! -f "BRANCH_PROTECTION.md" ]; then
+            echo "⚠️  WARNING: BRANCH_PROTECTION.md documentation not found"
+          else
+            echo "✅ Branch protection documentation exists"
+          fi
+
+      - name: Summary
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Branch Protection Validation Complete"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "PR Details:"
+          echo "  Source: ${{ github.head_ref }}"
+          echo "  Target: ${{ github.base_ref }}"
+          echo "  Author: ${{ github.actor }}"
+          echo ""
+          echo "Remember:"
+          echo "  - Only @ghrs123 can approve PRs to main"
+          echo "  - All changes must go through Pull Requests"
+          echo "  - CI checks must pass before merging"
+          echo ""
+          echo "See BRANCH_PROTECTION.md for configuration details"
