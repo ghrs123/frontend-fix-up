@@ -42,7 +42,7 @@ Agora, se houver duplicatas:
 ### MÉTODO RECOMENDADO: SQL Editor
 
 1. **Abrir SQL Editor**:
-   - Acesse: https://supabase.com/dashboard/project/trcnlengiehlzoxekijd/sql/new
+   - Acesse: https://supabase.com/dashboard/project/tjduhugyqcaiygexpptp/sql/new
 
 2. **Copiar e Executar**:
    - Abra: `supabase\seed.sql`
@@ -56,7 +56,7 @@ Agora, se houver duplicatas:
    - Você verá mensagens de sucesso
 
 4. **Verificar**:
-   - Vá em **Table Editor**: https://supabase.com/dashboard/project/trcnlengiehlzoxekijd/editor
+   - Vá em **Table Editor**: https://supabase.com/dashboard/project/tjduhugyqcaiygexpptp/editor
    - Verifique as tabelas:
      - `grammar_topics` - deve ter ~12 registros
      - `texts` - deve ter vários registros por nível

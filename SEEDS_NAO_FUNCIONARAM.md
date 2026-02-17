@@ -50,7 +50,7 @@ Os comandos disponíveis do `supabase db` são apenas:
 Este é o método mais confiável e sem erros de encoding:
 
 1. **Abrir SQL Editor do Supabase**:
-   - Acesse: https://supabase.com/dashboard/project/trcnlengiehlzoxekijd/sql/new
+   - Acesse: https://supabase.com/dashboard/project/tjduhugyqcaiygexpptp/sql/new
 
 2. **Copiar o arquivo de seeds**:
    - Abra o arquivo: `supabase\seed.sql`
@@ -100,9 +100,9 @@ Após aplicar os seeds com sucesso:
 
 ## Links Úteis
 
-- **SQL Editor**: https://supabase.com/dashboard/project/trcnlengiehlzoxekijd/sql/new
-- **Table Editor**: https://supabase.com/dashboard/project/trcnlengiehlzoxekijd/editor
-- **Painel Principal**: https://supabase.com/dashboard/project/trcnlengiehlzoxekijd
+- **SQL Editor**: https://supabase.com/dashboard/project/tjduhugyqcaiygexpptp/sql/new
+- **Table Editor**: https://supabase.com/dashboard/project/tjduhugyqcaiygexpptp/editor
+- **Painel Principal**: https://supabase.com/dashboard/project/tjduhugyqcaiygexpptp
 
 ---
 

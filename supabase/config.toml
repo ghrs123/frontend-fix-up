@@ -1,4 +1,4 @@
-project_id = "trcnlengiehlzoxekijd"
+project_id = "tjduhugyqcaiygexpptp"
 
 [db.seed]
 enabled = true
@@ -11,4 +11,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.review-writing]
+verify_jwt = false
+
+[functions.generate-practice]
 verify_jwt = false

@@ -245,9 +245,8 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
       toast.success('Palavra adicionada aos flashcards!');
       queryClient.invalidateQueries({ queryKey: ['flashcards'] });
     },
-    onError: (error: unknown) => {
-      const errorMessage = error instanceof Error ? error.message : '';
-      if (errorMessage.includes('duplicate')) {
+onError: (error: Error) => {
+        if (error.message?.includes('duplicate')) {
         toast.error('Esta palavra já está nos seus flashcards.');
       } else {
         toast.error('Erro ao adicionar palavra.');
@@ -268,8 +267,8 @@ export function DictionaryModal({ word, open, onOpenChange, textId }: Dictionary
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = language === 'en' ? 'en-US' : 'pt-PT';
     utterance.rate = 0.8;
-    utterance.pitch = 1;
-    utterance.volume = 1;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
     utterance.voice = voice;
     
     utterance.onstart = () => setIsSpeaking(true);

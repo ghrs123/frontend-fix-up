@@ -18,13 +18,23 @@ interface Profile {
 }
 
 export function useAuth() {
+    const redirectTo = globalThis.location?.origin;
+
     const signInWithGoogle = async () => {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+      console.log('[auth] signInWithGoogle using', import.meta.env.VITE_SUPABASE_URL);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo },
+      });
       return { error };
     };
 
     const signInWithGithub = async () => {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: window.location.origin } });
+      console.log('[auth] signInWithGithub using', import.meta.env.VITE_SUPABASE_URL);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: { redirectTo },
+      });
       return { error };
     };
   const [state, setState] = useState<AuthState>({
@@ -133,7 +143,7 @@ export function useAuth() {
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: globalThis.location?.origin,
         data: {
           display_name: displayName
         }

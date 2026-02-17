@@ -7,32 +7,51 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    const authorization = req.headers.get("authorization") ?? req.headers.get("Authorization");
+    if (!authorization) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error("SUPABASE_URL / SUPABASE_ANON_KEY is not configured");
+    }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) throw new Error("Unauthorized");
+    // Cliente Supabase com contexto de utilizador (JWT), para respeitar RLS
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authorization } },
+    });
+
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const { exerciseType = "mixed", difficulty = "beginner" } = await req.json();
+    const userId = userData.user.id;
 
-    // Fetch user's flashcards
+    // Fetch user's flashcards usando userId explícito
     const { data: flashcards, error: fcError } = await supabase
       .from("flashcards")
       .select("word, translation, definition, example_sentence")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("is_active", true)
       .limit(30);
 
-    if (fcError) throw fcError;
+    if (fcError) {
+      console.error("Flashcards error:", fcError);
+      throw fcError;
+    }
 
     if (!flashcards || flashcards.length === 0) {
       return new Response(
@@ -81,102 +100,25 @@ Translate: {"type":"translate","instruction":"...","sentence":"...","answer":"..
 Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese":"..."},...]}`;
     }
 
-    // Configuração de IA - Suporta múltiplas APIs
-    const AI_PROVIDER = Deno.env.get("AI_PROVIDER") || "lovable"; // openai, gemini, lovable
+    // Google Gemini API
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
     
-    let aiResponse: Response;
-    
-    if (AI_PROVIDER === "openai") {
-      // OpenAI (ChatGPT) - Recomendado
-      const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-      if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not configured");
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
 
-      aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini", // ou "gpt-4o" para melhor qualidade
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: exercisePrompt + "\n\nReturn ONLY a valid JSON object with the key 'exercises' containing an array of exactly 5 exercises." },
-          ],
+    const aiResponse = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          { role: "user", parts: [{ text: systemPrompt }] },
+          { role: "user", parts: [{ text: `${exercisePrompt}\n\nReturn ONLY valid JSON with the "exercises" key.` }] },
+        ],
+        generationConfig: {
           temperature: 0.7,
-          response_format: { type: "json_object" },
-        }),
-      });
-    } else if (AI_PROVIDER === "gemini") {
-      // Google Gemini - Gratuito até 15 RPM
-      const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-      if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
-
-      aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ text: systemPrompt + "\n\n" + exercisePrompt + "\n\nReturn ONLY a valid JSON object with the key 'exercises' containing an array of exactly 5 exercises." }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            responseMimeType: "application/json",
-          },
-        }),
-      });
-    } else {
-      // Lovable (original)
-      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-      if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
-      aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: exercisePrompt },
-          ],
-          tools: [{
-            type: "function",
-            function: {
-              name: "return_exercises",
-              description: "Return the generated exercises",
-              parameters: {
-                type: "object",
-                properties: {
-                  exercises: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        type: { type: "string", enum: ["fill-blank", "translate", "match"] },
-                        instruction: { type: "string" },
-                        sentence: { type: "string" },
-                        answer: { type: "string" },
-                        hint: { type: "string" },
-                        options: { type: "array", items: { type: "string" } },
-                        direction: { type: "string" },
-                        pairs: { type: "array", items: { type: "object", properties: { english: { type: "string" }, portuguese: { type: "string" } }, required: ["english", "portuguese"] } },
-                      },
-                      required: ["type", "instruction"],
-                    },
-                  },
-                },
-                required: ["exercises"],
-                additionalProperties: false,
-              },
-            },
-          }],
-          tool_choice: { type: "function", function: { name: "return_exercises" } },
-        }),
-      });
-    }
+      }),
+    });
 
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
@@ -191,31 +133,43 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
       }
       const errText = await aiResponse.text();
       console.error("AI error:", aiResponse.status, errText);
-      throw new Error("AI gateway error");
+      return new Response(JSON.stringify({ error: "Erro no serviço de IA", details: errText }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const aiData = await aiResponse.json();
-    let exercises;
-
-    // Parse response baseado no provider
-    if (AI_PROVIDER === "openai") {
-      const content = aiData.choices?.[0]?.message?.content;
-      if (!content) throw new Error("No content in response");
-      exercises = JSON.parse(content);
-    } else if (AI_PROVIDER === "gemini") {
-      const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!content) throw new Error("No content in response");
-      exercises = JSON.parse(content);
-    } else {
-      // Lovable (original)
-      const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-      if (!toolCall) throw new Error("No tool call response");
-      exercises = JSON.parse(toolCall.function.arguments);
+    const geminiData = await aiResponse.json();
+    const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    
+    // Parse JSON response
+    let parsed: { exercises?: unknown[] };
+    try {
+      // Try direct parse
+      parsed = JSON.parse(rawText) as { exercises?: unknown[] };
+    } catch {
+      // Try cleaning markdown code blocks
+      const cleaned = rawText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      try {
+        parsed = JSON.parse(cleaned) as { exercises?: unknown[] };
+      } catch {
+        return new Response(
+          JSON.stringify({ error: "AI returned invalid JSON", details: rawText }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
-    return new Response(JSON.stringify(exercises), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    if (!parsed?.exercises || !Array.isArray(parsed.exercises) || parsed.exercises.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Nenhum exercício foi gerado.", details: parsed }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify(parsed),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (e) {
     console.error("generate-practice error:", e);
     return new Response(

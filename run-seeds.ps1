@@ -63,7 +63,7 @@ Write-Host "  1. Execute: " -NoNewline -ForegroundColor White
 Write-Host "supabase db push --include-seed" -ForegroundColor Green
 Write-Host ""
 Write-Host "OPÇÃO 2 - Via SQL Editor (Manual):" -ForegroundColor White
-Write-Host "  1. Acesse: https://supabase.com/dashboard/project/trcnlengiehlzoxekijd/sql" -ForegroundColor Cyan
+Write-Host "  1. Acesse: https://supabase.com/dashboard/project/tjduhugyqcaiygexpptp/sql" -ForegroundColor Cyan
 Write-Host "  2. Abra o arquivo: supabase\seed.sql" -ForegroundColor White
 Write-Host "  3. Copie todo o conteúdo e execute no SQL Editor" -ForegroundColor White
 Write-Host ""
