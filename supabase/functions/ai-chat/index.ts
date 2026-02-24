@@ -95,7 +95,6 @@ Format responses using markdown for clarity.`,
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-<<<<<<< Updated upstream
           contents: [
             { parts: [{ text: systemMessage.content }] },
             ...messages.map((msg: any) => ({
@@ -103,13 +102,11 @@ Format responses using markdown for clarity.`,
               parts: [{ text: msg.content }]
             }))
           ],
-=======
           systemInstruction: { parts: [{ text: systemMessage.content }] },
           contents: messages.map((msg: { role: string; content: string }) => ({
             role: msg.role === "assistant" ? "model" : "user",
             parts: [{ text: msg.content }]
           })),
->>>>>>> Stashed changes
           generationConfig: {
             temperature: 0.7,
           },
