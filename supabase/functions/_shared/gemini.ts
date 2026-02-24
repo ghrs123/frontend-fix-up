@@ -11,7 +11,7 @@ export async function geminiGenerate(opts: GeminiGenerateOpts): Promise<string> 
   const key = getEnv("GEMINI_API_KEY");
 
   // Modelo recomendado: alias estável (evita quebrar quando versões são removidas)
-  const model = Deno.env.get("GEMINI_MODEL") || "gemini-flash-latest";
+  const model = Deno.env.get("GEMINI_MODEL") || "gemini-2.0-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
 
   const body = {

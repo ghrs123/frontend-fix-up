@@ -212,6 +212,12 @@ export function AIPracticeExercises() {
       });
 
       if (error) {
+        const ctx = (error as { context?: unknown })?.context;
+        if (ctx && typeof (ctx as Response).json === 'function') {
+          (ctx as Response).json().then(body => console.error('Function error body:', JSON.stringify(body))).catch(() => {});
+        } else {
+          console.error('Function error context:', JSON.stringify(ctx));
+        }
         console.error('Function invocation error:', error);
         const status = (error as any)?.context?.status;
         if (status === 401) {

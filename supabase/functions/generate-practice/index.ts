@@ -104,14 +104,14 @@ Match: {"type":"match","instruction":"...","pairs":[{"english":"...","portuguese
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
     
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
     const aiResponse = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt }] },
         contents: [
-          { role: "user", parts: [{ text: systemPrompt }] },
           { role: "user", parts: [{ text: `${exercisePrompt}\n\nReturn ONLY valid JSON with the "exercises" key.` }] },
         ],
         generationConfig: {
